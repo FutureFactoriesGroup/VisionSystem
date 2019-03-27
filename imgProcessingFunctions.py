@@ -6,11 +6,11 @@ from scipy import interpolate
 import matplotlib.pyplot as plt
 
 # Parameters
-KP = 1.0  # attractive potential gain
-ETA = 100.0  # repulsive potential gain
-AREA_WIDTH = 250.0  # potential area width [m]
+KP = 1  # attractive potential gain
+ETA = 75.0  # repulsive potential gain
+AREA_WIDTH = 50.0  # potential area width [m]
 
-show_animation = False
+show_animation = True
 
 def getMarkerPositions(rawImg,centresImg):
     if rawImg.any() == None:
@@ -231,9 +231,8 @@ def getObjectPerimeters(rawImg, pathPointResolution, robotPositions):
                     cv.circle(drawing,(X_last,Y_last), 2, (0,255,0), 1)
     # X_list = np.asarray(X_list)
     # Y_list = np.asarray(Y_list)
-    List = X_list + Y_list
     cv.imshow("Drawing",drawing)
-    return List
+    return X_list, Y_list
 
 
 def calc_potential_field(gx, gy, ox, oy, reso, rr):

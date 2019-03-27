@@ -29,10 +29,7 @@ print("centres: {}".format(centres))
 
 robotPositions = getRobotPositions(centres)
 
-List = getObjectPerimeters(parametersImg, 50, robotPositions)
-List = np.asarray(List)
-X_list = list(List[0:(int(List.size/2)-1)])
-Y_list = list(List[(int(List.size/2)-1):-1])
+X_list, Y_list = getObjectPerimeters(parametersImg, 15, robotPositions)
 #################################### image demo rendering code:
 
 print("robotPositions")
@@ -68,8 +65,8 @@ if robotPositions.size != 0:
 
 sx = (robotPositions[0])/10  # start x position [m]
 sy = (robotPositions[1])/10 # start y positon [m]
-gx = 50/10  # goal x position [m]
-gy = 250/10  # goal y position [m]
+gx = 100/10  # goal x position [m]
+gy = 350/10  # goal y position [m]
 grid_size = 1  # potential grid size [m]
 robot_radius = 5  # robot radius [m]
 
