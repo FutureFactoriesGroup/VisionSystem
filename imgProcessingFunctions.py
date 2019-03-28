@@ -19,19 +19,18 @@ def getMarkerPositions(rawImg,centresImg):
 
     hsvImg = cv.cvtColor(rawImg, cv.COLOR_BGR2HSV)
 
-    lower_red1 = np.array([200,0,0])
-    upper_red1 = np.array([255,255,255])
+    lower_red1 = np.array([150,100,100])
+    upper_red1 = np.array([179,255,255])
 
-    lower_red2 = np.array([0,0,0])
-    upper_red2 = np.array([40,255,255])
+    lower_red2 = np.array([0,100,100])
+    upper_red2 = np.array([10,255,255])
     filteredHsvImg1 = cv.inRange(hsvImg, lower_red1, upper_red1)
     filteredHsvImg2 = cv.inRange(hsvImg, lower_red2, upper_red2)
     filteredHsvImg = cv.bitwise_or(filteredHsvImg1,filteredHsvImg2)
     #cv.imshow('filteredHsvImg',filteredHsvImg2)
 
     kernel = np.ones((3,3),np.uint8)
-    erodedImg = cv.erode(filteredHsvImg,kernel,iterations = 1)
-    dilatedImg = cv.dilate(erodedImg,kernel,iterations = 1)
+    dilatedImg = cv.dilate(filteredHsvImg,kernel,iterations = 2)
     # this could be repaced using "Opening" operation
     #cv.imshow('erosion/dilation',dilatedImg)
 
@@ -39,23 +38,26 @@ def getMarkerPositions(rawImg,centresImg):
     low_threshold = 0
     ratio = 3
     kernel_size = 3
-    canny_edImg = cv.Canny(dilatedImg, low_threshold, low_threshold*ratio, kernel_size)
-    #cv.imshow('canny_edImg',canny_edImg)
+    erodedImg = cv.erode(dilatedImg,kernel,iterations = 1)
+    canny_edImg = cv.Canny(erodedImg, low_threshold, low_threshold*ratio, kernel_size)
+    cv.imshow('canny_edImg',canny_edImg)
 
     _, contours, _ = cv.findContours(canny_edImg, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     # where contours is a vector of a vector of points in c++
+
+    finalCentresImg = rawImg.copy()#np.zeros(rawImg.shape)
     areas = []
     momentsList = []
-    areaLowerThreshold = 25
-    areaUpperThreshold = 75
+    areaLowerThreshold = 30
+    areaUpperThreshold = 150
     for cont in contours:
         if (cv.contourArea(cont) > areaLowerThreshold and cv.contourArea(cont) < areaUpperThreshold):
             areas.append(cv.contourArea(cont))
             momentsList.append(cv.moments(cont))
-
+            #cv.drawContours(finalCentresImg,cont, -1, (0, 255, 0), 3)
     centres = []
     distThreshold = 10
-    finalCentresImg = rawImg.copy()#np.zeros(rawImg.shape)
+
     #centresImg = rawImg.copy()
     for M in momentsList:
         tempCent = np.array([int(M['m10']/M['m00']),int(M['m01']/M['m00'])])
@@ -69,14 +71,14 @@ def getMarkerPositions(rawImg,centresImg):
 
             if toBeAdded == True:
                 centres.append(tempCent)
-                cv.circle(finalCentresImg,tuple(tempCent), 5, (0,255,0), 5)
+                cv.circle(finalCentresImg,tuple(tempCent), 1, (0,255,0), 1)
                 #print("adding circle")
 
         else:
             centres.append(tempCent)
-            cv.circle(finalCentresImg,tuple(tempCent), 5, (0,255,0), 5)
+            cv.circle(finalCentresImg,tuple(tempCent), 1, (0,255,0), 1)
             #print("adding circle")
-    #cv.imshow('finalCentresImg',finalCentresImg)
+    cv.imshow('finalCentresImg',finalCentresImg)
 
     print("Found {} markers".format(len(centres)))
     return centres
@@ -140,7 +142,7 @@ def getRobotPositions(centres):
                                 robotPositions = temp_robotPositions
                             else:
                                 rows,cols = robotPositions.shape
-                                temp_robotPositions = np.zeros((rows,cols+1))
+                                temp_robotPositions = np.zeros((rows+1,cols))
                                 temp_robotPositions[:-1,:] = robotPositions
                                 temp_robotPositions[-1:,:] = currentEntry
                                 robotPositions = temp_robotPositions

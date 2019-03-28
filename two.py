@@ -10,7 +10,7 @@ print(cv.__version__)
 
 
 ################### get test image
-inputImg = cv.imread('Screenshot5.png')
+inputImg = cv.imread('WIN_20190327_14_06_40_Pro.jpg')
 #cam = cv2.VideoCapture(0)
 rows = 400
 cols = 800
@@ -29,7 +29,7 @@ print("centres: {}".format(centres))
 
 robotPositions = getRobotPositions(centres)
 
-X_list, Y_list = getObjectPerimeters(parametersImg, 15, robotPositions)
+#X_list, Y_list = getObjectPerimeters(parametersImg, 15, robotPositions)
 #################################### image demo rendering code:
 
 print("robotPositions")
@@ -47,7 +47,7 @@ if robotPositions.size != 0:
         cv.arrowedLine(centresImg, (int(robotPositions[0]),int(robotPositions[1])), (x, y), (0,255,0), 2)
 
     else:
-        print(size(robotPositions.shape))
+        #print(size(robotPositions.shape))
         bases,details = robotPositions.shape
         for baseNo in range(bases):
             cv.circle(centresImg, (int(robotPositions.item(baseNo,0)),int(robotPositions.item(baseNo,1))), 5, ( 0, 0, 255 ), 1, 8 )
@@ -61,28 +61,28 @@ if robotPositions.size != 0:
 #fig=plt.figure(figsize=(8, 8))
 
 
-####################### Path Planning ###########################
-
-sx = (robotPositions[0])/10  # start x position [m]
-sy = (robotPositions[1])/10 # start y positon [m]
-gx = 100/10  # goal x position [m]
-gy = 350/10  # goal y position [m]
-grid_size = 1  # potential grid size [m]
-robot_radius = 5  # robot radius [m]
-
-ox = X_list # obstacle x position list [m]
-oy = Y_list  # obstacle y position list [m]
-
-# if show_animation:
-#     plt.grid(True)
-#     plt.axis("equal")
-
-# path generation
-rx, ry = potential_field_planning(
-    sx, sy, gx, gy, ox, oy, grid_size, robot_radius)
-
-for i in range(len(rx)):
-    cv.circle(centresImg, (int(rx[i]*10),int(ry[i]*10)), 5, ( 0, 0, 255 ), 1, 8 )
+# ####################### Path Planning ###########################
+#
+# sx = (robotPositions[0])/10  # start x position [m]
+# sy = (robotPositions[1])/10 # start y positon [m]
+# gx = 100/10  # goal x position [m]
+# gy = 350/10  # goal y position [m]
+# grid_size = 1  # potential grid size [m]
+# robot_radius = 5  # robot radius [m]
+#
+# ox = X_list # obstacle x position list [m]
+# oy = Y_list  # obstacle y position list [m]
+#
+# # if show_animation:
+# #     plt.grid(True)
+# #     plt.axis("equal")
+#
+# # path generation
+# rx, ry = potential_field_planning(
+#     sx, sy, gx, gy, ox, oy, grid_size, robot_radius)
+#
+# for i in range(len(rx)):
+#     cv.circle(centresImg, (int(rx[i]*10),int(ry[i]*10)), 5, ( 0, 0, 255 ), 1, 8 )
 cv.imshow('centresImg',centresImg)
 # if show_animation:
 #     plt.show()
