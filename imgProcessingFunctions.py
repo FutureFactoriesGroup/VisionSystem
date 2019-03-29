@@ -19,11 +19,11 @@ def getMarkerPositions(rawImg,centresImg):
 
     hsvImg = cv.cvtColor(rawImg, cv.COLOR_BGR2HSV)
 
-    lower_red1 = np.array([150,100,100])
+    lower_red1 = np.array([150,50,50])
     upper_red1 = np.array([179,255,255])
 
-    lower_red2 = np.array([0,100,100])
-    upper_red2 = np.array([10,255,255])
+    lower_red2 = np.array([0,50,50])
+    upper_red2 = np.array([15,255,255])
     filteredHsvImg1 = cv.inRange(hsvImg, lower_red1, upper_red1)
     filteredHsvImg2 = cv.inRange(hsvImg, lower_red2, upper_red2)
     filteredHsvImg = cv.bitwise_or(filteredHsvImg1,filteredHsvImg2)
@@ -48,8 +48,8 @@ def getMarkerPositions(rawImg,centresImg):
     finalCentresImg = rawImg.copy()#np.zeros(rawImg.shape)
     areas = []
     momentsList = []
-    areaLowerThreshold = 30
-    areaUpperThreshold = 150
+    areaLowerThreshold = 50
+    areaUpperThreshold = 100
     for cont in contours:
         if (cv.contourArea(cont) > areaLowerThreshold and cv.contourArea(cont) < areaUpperThreshold):
             areas.append(cv.contourArea(cont))
@@ -105,8 +105,8 @@ def getRobotPositions(centres):
                     if abNorm > maxabNorm or abNorm < minabNorm: # ie if its larger or smaller than expected
                         continue # ie begin loop on next b candidate
                     abOrth = np.array([-ab[1],ab[0]])
-                    cEst0 = (0.5*ab+a) + 1.33*abOrth # get estimates for positions of third marker
-                    cEst1 = (0.5*ab+a) - 1.33*abOrth
+                    cEst0 = (0.5*ab+a) + 2.25*abOrth # get estimates for positions of third marker
+                    cEst1 = (0.5*ab+a) - 2.25*abOrth
                     bestMatch = 0
                     bestMatchIndex = 0
                     smallestDist = 10000
