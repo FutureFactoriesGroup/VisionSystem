@@ -4,8 +4,10 @@
 import pkg_resources
 import sys
 DIR = "/usr/local/lib/python3.5/dist-packages"
+DIR = "/usr/local/lib/python2.7/dist-packages"
+
 sys.path.insert(0, DIR)
-pkg_resources.require("opencv-python==4.0.0.21")
+#pkg_resources.require("opencv-python==4.0.0.21")
 import sys
 import numpy as np
 import cv2 as cv
@@ -74,13 +76,18 @@ cam.set(cv.CAP_PROP_AUTO_EXPOSURE,1)
 while(True):
     ret,frame = cam.read()
     inputImg = frame.copy()
+    rawImg = frame.copy()
 
     #rows = 450
     cols = 800
     height, width, depth = inputImg.shape
-    scale = cols/width
+    print(inputImg.shape)
+    scale = float(cols)/float(width)
+    print("scale {}".format(scale))
     newX,newY = int(inputImg.shape[1]*scale), int(inputImg.shape[0]*scale)
-    rawImg = cv.resize(inputImg,(newX, newY), interpolation = cv.INTER_CUBIC)
+    print("new X {}".format(newX))
+    print("new Y {}".format(newY))
+    rawImg = cv.resize(inputImg,(newX, newY))#, interpolation = cv.INTER_CUBIC)
     cv.imshow('outputWindow',rawImg)
 
     centresImg = rawImg.copy()#np.zeros(rawImg.shape)
@@ -105,9 +112,9 @@ while(True):
             cv.circle(centresImg, (int(robotPositions[0]),int(robotPositions[1])), 5, ( 0, 0, 255 ), 1, 8 )
             length = 30;
             x = int(np.cos(robotPositions[2])*length)+int(robotPositions[0])
-            print("x: {}".format(x))
+            #print("x: {}".format(x))
             y = int(np.sin(robotPositions[2])*length)+int(robotPositions[1])
-            print("y: {}".format(y))
+            #print("y: {}".format(y))
             cv.arrowedLine(centresImg, (int(robotPositions[0]),int(robotPositions[1])), (x, y), (0,255,0), 2)
 
         else:
@@ -117,9 +124,9 @@ while(True):
                 cv.circle(centresImg, (int(robotPositions.item(baseNo,0)),int(robotPositions.item(baseNo,1))), 5, ( 0, 0, 255 ), 1, 8 )
                 length = 30;
                 x = int(np.cos(robotPositions.item(baseNo,2))*length)+int(robotPositions.item(baseNo,0))
-                print("x: {}".format(x))
+                #print("x: {}".format(x))
                 y = int(np.sin(robotPositions.item(baseNo,2))*length)+int(robotPositions.item(baseNo,1))
-                print("y: {}".format(y))
+                #print("y: {}".format(y))
                 cv.arrowedLine(centresImg, (int(robotPositions.item(baseNo,0)),int(robotPositions.item(baseNo,1))), (x, y), (0,255,0), 2)
 
     #fig=plt.figure(figsize=(8, 8))

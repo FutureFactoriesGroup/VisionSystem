@@ -54,17 +54,18 @@ def getMarkerPositions(rawImg,centresImg):
     momentsList = []
     areaLowerThreshold = 85
     areaUpperThreshold = 130
-    contCounter = 0
+    #contCounter = 0
     for cont in contours:
         if (cv.contourArea(cont) > areaLowerThreshold and cv.contourArea(cont) < areaUpperThreshold):
-            print("good contour {} has area {}".format(contCounter, cv.contourArea(cont)))
-            contCounter = contCounter + 1
+            #print("good contour {} has area {}".format(contCounter, cv.contourArea(cont)))
+            #contCounter = contCounter + 1
             areas.append(cv.contourArea(cont))
             momentsList.append(cv.moments(cont))
             cv.drawContours(finalCentresImg,cont, -1, (255, 255, 0), 1)
         else:
-            print("bad contour {} has area {}".format(contCounter, cv.contourArea(cont)))
-            contCounter = contCounter + 1
+            pass
+            #print("bad contour {} has area {}".format(contCounter, cv.contourArea(cont)))
+            #contCounter = contCounter + 1
 
     centres = []
     distThreshold = 20
@@ -259,7 +260,7 @@ def calc_potential_field(gx, gy, ox, oy, reso, rr):
     miny = min(oy) - AREA_WIDTH / 2.0
     maxx = max(ox) + AREA_WIDTH / 2.0
     maxy = max(oy) + AREA_WIDTH / 2.0
-    xw = int(round((maxx - minx) / reso))
+    xw = int(round((maxxprint("nre x {}".format(newX)) - minx) / reso))
     yw = int(round((maxy - miny) / reso))
 
     # calc each potential
