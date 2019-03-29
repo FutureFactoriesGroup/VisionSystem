@@ -26,7 +26,7 @@ cam.set(15, -25)#Exposure
 while(True):
     ret,frame = cam.read()
     inputImg = frame.copy()
-
+    rawImg = inputImg.copy()
     centresImg = rawImg.copy()#np.zeros(rawImg.shape)
     parametersImg = rawImg.copy()
 
@@ -93,10 +93,10 @@ while(True):
     #     cv.circle(centresImg, (int(rx[i]*10),int(ry[i]*10)), 5, ( 0, 0, 255 ), 1, 8 )
     #rows = 450
     cols = 800
-    height, width, depth = inputImg.shape
+    height, width, depth = centresImg.shape
     scale = cols/width
-    newX,newY = int(inputImg.shape[1]*scale), int(inputImg.shape[0]*scale)
-    rawImg = cv.resize(inputImg,(newX, newY), interpolation = cv.INTER_CUBIC)
+    newX,newY = int(centresImg.shape[1]*scale), int(inputImg.shape[0]*scale)
+    centresImg = cv.resize(centresImg,(newX, newY), interpolation = cv.INTER_CUBIC)
     cv.imshow('centresImg',centresImg)
     #out.write(cv.cvtColor(centresImg, cv.COLOR_HSV2BGR))
     # if show_animation:
