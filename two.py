@@ -1,6 +1,11 @@
 #!/usr/bin/python3
-ros_path = '/opt/ros/kinetic/lib/python2.7/dist-packages'
+#ros_path = '/opt/ros/kinetic/lib/python2.7/dist-packages'
 #cvpath = "/home/jamie/Libraries/opencv-4.0.1/build/lib"
+import pkg_resources
+import sys
+DIR = "/usr/local/lib/python3.5/dist-packages"
+sys.path.insert(0, DIR)
+pkg_resources.require("opencv-python==4.0.0.21")
 import sys
 import numpy as np
 import cv2 as cv
@@ -10,23 +15,74 @@ from imgProcessingFunctions import *
 print(cv.__version__)
 
 
+exposureVal = 105
+saturationVal = 150
+brightnessVal = 0
+contrastVal = 300
+gainVal = 150
+
+
 ################### get test image
 #inputImg = cv.imread('WIN_20190327_14_06_40_Pro.jpg')
 cam = cv.VideoCapture(0)
+cv.namedWindow( "outputWindow", cv.WINDOW_AUTOSIZE );
+def exposureCallback(val):
+    exposureVal = cv.getTrackbarPos("exposureTrackbar", "outputWindow")
+    cam.set(15,exposureVal)
+
+def saturationCallback(val):
+    saturationVal = cv.getTrackbarPos("saturationTrackbar", "outputWindow")
+    cam.set(12,saturationVal)
+
+def brightnessCallback(val):
+    brightnessVal = cv.getTrackbarPos("brightnessTrackbar", "outputWindow")
+    cam.set(10,brightnessVal)
+
+def contrastCallback(val):
+    contrastVal = cv.getTrackbarPos("contrastTrackbar", "outputWindow")
+    cam.set(11,contrastVal)
+
+def gainCallback(val):
+    gainVal = cv.getTrackbarPos("gainTrackbar", "outputWindow")
+    cam.set(14,gainVal)
+
+cv.createTrackbar("exposureTrackbar",   "outputWindow", exposureVal, 300, exposureCallback)
+cv.createTrackbar("saturationTrackbar", "outputWindow", saturationVal, 300, saturationCallback)
+cv.createTrackbar("brightnessTrackbar", "outputWindow", brightnessVal, 300, brightnessCallback)
+cv.createTrackbar("contrastTrackbar",   "outputWindow", contrastVal, 500, contrastCallback)
+cv.createTrackbar("gainTrackbar",       "outputWindow", gainVal, 300, gainCallback)
+
+
+
 cam.set(3, 1920) #Width
+#time.sleep(1)
 cam.set(4, 1080) #Height
-cam.set(10, 0) #Brightness
-cam.set(14, 0) #Gain
-cam.set(11, 50)#Contrast
-cam.set(15, -50)#Exposure
-time.sleep(1)
-cam.set(15, -25)#Exposure
+cam.set(cv.CAP_PROP_AUTO_EXPOSURE,1)
+#time.sleep(1)0
+#cam.set(10, -100) #Brightness
+#time.sleep(1)
+#cam.set(14, 4) #Gain
+#time.sleep(1)
+#cam.set(11, 0)#Contrast
+#time.sleep(1)
+#cam.set(15, -50)#Exposure
+#time.sleep(1)
+#cam.set(12, 100)#saturation
+#time.sleep(1)
 
 #out = cv.VideoWriter('output.mp4',cv.VideoWriter_fourcc('X','2','6','4'),10.0,(800,400))
 while(True):
     ret,frame = cam.read()
     inputImg = frame.copy()
-    rawImg = inputImg.copy()
+
+    #rows = 450
+    cols = 800
+    height, width, depth = inputImg.shape
+    scale = cols/width
+    newX,newY = int(inputImg.shape[1]*scale), int(inputImg.shape[0]*scale)
+    rawImg = cv.resize(inputImg,(newX, newY), interpolation = cv.INTER_CUBIC)
+    cv.imshow('outputWindow',rawImg)
+
     centresImg = rawImg.copy()#np.zeros(rawImg.shape)
     parametersImg = rawImg.copy()
 
@@ -91,12 +147,6 @@ while(True):
     #
     # for i in range(len(rx)):
     #     cv.circle(centresImg, (int(rx[i]*10),int(ry[i]*10)), 5, ( 0, 0, 255 ), 1, 8 )
-    #rows = 450
-    cols = 800
-    height, width, depth = centresImg.shape
-    scale = cols/width
-    newX,newY = int(centresImg.shape[1]*scale), int(inputImg.shape[0]*scale)
-    centresImg = cv.resize(centresImg,(newX, newY), interpolation = cv.INTER_CUBIC)
     cv.imshow('centresImg',centresImg)
     #out.write(cv.cvtColor(centresImg, cv.COLOR_HSV2BGR))
     # if show_animation:

@@ -19,11 +19,11 @@ def getMarkerPositions(rawImg,centresImg):
 
     hsvImg = cv.cvtColor(rawImg, cv.COLOR_BGR2HSV)
 
-    lower_red1 = np.array([150,50,50])
+    lower_red1 = np.array([160,100,100])
     upper_red1 = np.array([179,255,255])
 
-    lower_red2 = np.array([0,50,50])
-    upper_red2 = np.array([15,255,255])
+    lower_red2 = np.array([0,100,100])
+    upper_red2 = np.array([10,255,255])
     filteredHsvImg1 = cv.inRange(hsvImg, lower_red1, upper_red1)
     filteredHsvImg2 = cv.inRange(hsvImg, lower_red2, upper_red2)
     filteredHsvImg = cv.bitwise_or(filteredHsvImg1,filteredHsvImg2)
@@ -38,25 +38,36 @@ def getMarkerPositions(rawImg,centresImg):
     low_threshold = 0
     ratio = 3
     kernel_size = 3
-    erodedImg = cv.erode(dilatedImg,kernel,iterations = 1)
+    erodedImg = cv.erode(dilatedImg,kernel,iterations =1)
     canny_edImg = cv.Canny(erodedImg, low_threshold, low_threshold*ratio, kernel_size)
     cv.imshow('canny_edImg',canny_edImg)
 
-    _, contours, _ = cv.findContours(canny_edImg, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-    # where contours is a vector of a vector of points in c++
+    try:
+        contours, _ = cv.findContours(canny_edImg, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+        # where contours is a vector of a vector of points in c++
+        #break
+    except ValueError:
+        _, contours, _ = cv.findContours(canny_edImg, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
 
     finalCentresImg = rawImg.copy()#np.zeros(rawImg.shape)
     areas = []
     momentsList = []
-    areaLowerThreshold = 50
-    areaUpperThreshold = 100
+    areaLowerThreshold = 85
+    areaUpperThreshold = 130
+    contCounter = 0
     for cont in contours:
         if (cv.contourArea(cont) > areaLowerThreshold and cv.contourArea(cont) < areaUpperThreshold):
+            print("good contour {} has area {}".format(contCounter, cv.contourArea(cont)))
+            contCounter = contCounter + 1
             areas.append(cv.contourArea(cont))
             momentsList.append(cv.moments(cont))
-            #cv.drawContours(finalCentresImg,cont, -1, (0, 255, 0), 3)
+            cv.drawContours(finalCentresImg,cont, -1, (255, 255, 0), 1)
+        else:
+            print("bad contour {} has area {}".format(contCounter, cv.contourArea(cont)))
+            contCounter = contCounter + 1
+
     centres = []
-    distThreshold = 10
+    distThreshold = 20
 
     #centresImg = rawImg.copy()
     for M in momentsList:
@@ -68,6 +79,7 @@ def getMarkerPositions(rawImg,centresImg):
             for c in tempCentres:
                 if np.linalg.norm(tempCent - c) < distThreshold: # some centres are close due to duplication in moments calc, this removes them
                     toBeAdded = False
+                    #pass
 
             if toBeAdded == True:
                 centres.append(tempCent)
@@ -85,9 +97,9 @@ def getMarkerPositions(rawImg,centresImg):
 
 def getRobotPositions(centres):
     robotPositions = np.array([]) # create numpy array to store robot positions
-    maxabNorm = 50
-    minabNorm = 10
-    cDevThreshold = 10
+    maxabNorm = 35
+    minabNorm = 20
+    cDevThreshold = 20
 
     centresAllocated = np.zeros((1,len(centres)))
     #print(centres)
@@ -105,8 +117,8 @@ def getRobotPositions(centres):
                     if abNorm > maxabNorm or abNorm < minabNorm: # ie if its larger or smaller than expected
                         continue # ie begin loop on next b candidate
                     abOrth = np.array([-ab[1],ab[0]])
-                    cEst0 = (0.5*ab+a) + 2.25*abOrth # get estimates for positions of third marker
-                    cEst1 = (0.5*ab+a) - 2.25*abOrth
+                    cEst0 = (0.5*ab+a) + 2*abOrth # get estimates for positions of third marker
+                    cEst1 = (0.5*ab+a) - 2*abOrth
                     bestMatch = 0
                     bestMatchIndex = 0
                     smallestDist = 10000
@@ -170,7 +182,12 @@ def getObjectPerimeters(rawImg, pathPointResolution, robotPositions):
     ratio = 3
     kernel_size = 5
     canny_edImg = cv.Canny(dilatedImg, low_threshold, low_threshold*ratio, kernel_size)
-    _, contours, _ = cv.findContours(canny_edImg, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+
+    try:
+        _, contours, _ = cv.findContours(canny_edImg, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+        #break
+    except ValueError:
+        contours, _ = cv.findContours(canny_edImg, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
     contourImg = np.zeros(rawImg.shape)
     cv.drawContours(contourImg, contours, -1, (0,0,255), 3)
     #cv.imshow('contourImg',contourImg)
