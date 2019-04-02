@@ -4,7 +4,7 @@
 import pkg_resources
 import sys
 DIR = "/usr/local/lib/python3.5/dist-packages"
-DIR = "/usr/local/lib/python2.7/dist-packages"
+#DIR = "/usr/local/lib/python2.7/dist-packages"
 
 sys.path.insert(0, DIR)
 #pkg_resources.require("opencv-python==4.0.0.21")
@@ -15,7 +15,9 @@ import time
 import matplotlib.pyplot as plt
 from imgProcessingFunctions import *
 print(cv.__version__)
-import haslib
+import hashlib
+import rospy
+from std_msgs.msg import String
 
 InitPathData = '3'+'1'+'4'+'1'+'019'
 InitPositionData = '3'+'1'+'4'+'1'+'022'
@@ -138,13 +140,24 @@ while(True):
                 cv.arrowedLine(centresImg, (int(robotPositions.item(baseNo,0)),int(robotPositions.item(baseNo,1))), (x, y), (0,255,0), 2)
 
     #fig=plt.figure(figsize=(8, 8))
-    m = haslib.sha256()
-    PositionData = InitPositionData + "1," + (robotPositions[0]/225) + ',' + (robotPositions[1]/255) + ',' + (robotPositions[2])
-    m.update(PositionData)
-    Checksum = m.hexdisgest()
-    DataToSend = PositionData + Checksum
-    pub.publish(DataToSend)
-
+    m = hashlib.sha256()
+    if robotPositions.size != 0:
+        try:
+            PositionData = '(1,' + str(robotPositions[0]/225) + ',' + str(robotPositions[1]/255) + ',' + str(robotPositions[2]) + ')'
+        except IndexError as e:
+            PositionData = '(1,' + str(robotPositions[0,0]/225) + ',' + str(robotPositions[0,1]/255) + ',' + str(robotPositions[0,2]) + ')'
+            print("2 detections")
+        DataToSend = InitPositionData + PositionData
+        m.update(PositionData.encode('utf-8'))
+        Checksum = m.hexdigest()
+        DataToSend = DataToSend + Checksum
+        pub.publish(DataToSend)
+        print("Final robotPositions")
+        print(robotPositions)
+    # else:
+    #     print("Final robotPositions")
+    #     print(robotPositions)
+    #     exit()
     # ####################### Path Planning ###########################
     #
     # sx = (robotPositions[0])/225  # start x position [m]
