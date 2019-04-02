@@ -147,7 +147,17 @@ while(True):
         except IndexError as e:
             PositionData = '(1,' + str(robotPositions[0,0]/225) + ',' + str(robotPositions[0,1]/255) + ',' + str(robotPositions[0,2]) + ')'
             print("2 detections")
-        DataToSend = InitPositionData + PositionData
+        dataLength = len(PositionData)
+        dataLengthString = ""
+        if dataLength < 10:
+            dataLengthString = dataLengthString = "0"
+        if dataLength < 100:
+            dataLengthString = dataLengthString = "0"
+        if dataLength < 1000:
+            dataLengthString = dataLengthString = "0"
+
+        dataLengthString = dataLengthString + str(dataLength)
+        DataToSend = InitPositionData + dataLengthString + PositionData
         m.update(PositionData.encode('utf-8'))
         Checksum = m.hexdigest()
         DataToSend = DataToSend + Checksum
