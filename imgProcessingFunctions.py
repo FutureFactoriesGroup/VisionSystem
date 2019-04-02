@@ -207,8 +207,8 @@ def getObjectPerimeters(rawImg, pathPointResolution, robotPositions):
         M = cv.moments(CurrentContour)
         cx = int(M['m10']/M['m00'])
         cy = int(M['m01']/M['m00'])
-        cX_list.append(cx/10)
-        cY_list.append(cy/10)
+        cX_list.append(cx/225)
+        cY_list.append(cy/225)
         Continue = True
 
 
@@ -237,17 +237,17 @@ def getObjectPerimeters(rawImg, pathPointResolution, robotPositions):
                 #Y_list.append(Y1)
                 for j in range(NoOfPts):
                     Xn = CurrentContour[j*SamplingInterval,0,0]
-                    X_list.append(Xn/10)
+                    X_list.append(Xn/225)
                     Yn = CurrentContour[j*SamplingInterval,0,1]
-                    Y_list.append(Yn/10)
+                    Y_list.append(Yn/225)
                     cv.circle(drawing,(Xn,Yn), 2, (0,255,0), 1)
 
                 Last_Index = (ContourSize - math.ceil(SamplingInterval/2))-1
                 if(Last_Index > 0 and Last_Index < ContourSize):
                     X_last = CurrentContour[Last_Index,0,0]
-                    X_list.append(X_last/10)
+                    X_list.append(X_last/225)
                     Y_last = CurrentContour[Last_Index,0,1]
-                    Y_list.append(Y_last/10)
+                    Y_list.append(Y_last/225)
                     cv.circle(drawing,(X_last,Y_last), 2, (0,255,0), 1)
     # X_list = np.asarray(X_list)
     # Y_list = np.asarray(Y_list)
@@ -307,7 +307,7 @@ def calc_repulsive_potential(x, y, ox, oy, rr):
 
 def get_motion_model():
     # dx, dy
-    Step = 1
+    Step = 0.10
     motion = [[Step, 0],
               [0, Step],
               [-Step, 0],

@@ -15,7 +15,15 @@ import time
 import matplotlib.pyplot as plt
 from imgProcessingFunctions import *
 print(cv.__version__)
+import haslib
 
+InitPathData = '3'+'1'+'4'+'1'+'019'
+InitPositionData = '3'+'1'+'4'+'1'+'022'
+DataToSend = ""
+
+pub = rospy.Publisher('/transport', String, queue_size=10)
+rospy.init_node('vision', anonymous=True)
+rospy.loginfo(DataToSend)
 
 exposureVal = 105
 saturationVal = 150
@@ -130,34 +138,33 @@ while(True):
                 cv.arrowedLine(centresImg, (int(robotPositions.item(baseNo,0)),int(robotPositions.item(baseNo,1))), (x, y), (0,255,0), 2)
 
     #fig=plt.figure(figsize=(8, 8))
-
+    m = haslib.sha256()
+    PositionData = InitPositionData + "1," + (robotPositions[0]/225) + ',' + (robotPositions[1]/255) + ',' + (robotPositions[2])
+    m.update(PositionData)
+    Checksum = m.hexdisgest()
+    DataToSend = PositionData + Checksum
+    pub.publish(DataToSend)
 
     # ####################### Path Planning ###########################
     #
-    # sx = (robotPositions[0])/10  # start x position [m]
-    # sy = (robotPositions[1])/10 # start y positon [m]
-    # gx = 100/10  # goal x position [m]
-    # gy = 350/10  # goal y position [m]
+    # sx = (robotPositions[0])/225  # start x position [m]
+    # sy = (robotPositions[1])/225 # start y positon [m]
+    # gx = 100/225  # goal x position [m]
+    # gy = 350/225  # goal y position [m]
     # grid_size = 1  # potential grid size [m]
-    # robot_radius = 5  # robot radius [m]
+    # robot_radius = 0.3  # robot radius [m]
     #
     # ox = X_list # obstacle x position list [m]
     # oy = Y_list  # obstacle y position list [m]
-    #
-    # # if show_animation:
-    # #     plt.grid(True)
-    # #     plt.axis("equal")
     #
     # # path generation
     # rx, ry = potential_field_planning(
     #     sx, sy, gx, gy, ox, oy, grid_size, robot_radius)
     #
     # for i in range(len(rx)):
-    #     cv.circle(centresImg, (int(rx[i]*10),int(ry[i]*10)), 5, ( 0, 0, 255 ), 1, 8 )
+    #     cv.circle(centresImg, (int(rx[i]*225),int(ry[i]*225)), 5, ( 0, 0, 255 ), 1, 8 )
     cv.imshow('centresImg',centresImg)
     #out.write(cv.cvtColor(centresImg, cv.COLOR_HSV2BGR))
-    # if show_animation:
-    #     plt.show()
 
 
 

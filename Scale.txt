@@ -1,0 +1,2 @@
+1cm = 2.25 pixels
+1m = 225pixels
