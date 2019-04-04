@@ -165,15 +165,11 @@ def getRobotPositions(centres):
                         centresAllocated[bestMatchIndex] = 1
     return robotPositions
 
-def getObjectPerimeters(rawImg, pathPointResolution, robotPositions):
-    #rawImg = cv.blur(rawImg, (11,11)) # uncomment potentially?
-    #cv.imshow('inputImg',rawImg)
+def getObjectPerimeters(rawImg, pathPointResolution, robotPositions, ShowImages):
     hsvImg = cv.cvtColor(rawImg, cv.COLOR_BGR2HSV)
-    #cv.imshow('un-filteredHsvImg',hsvImg)
     lower_red = np.array([0,0,0])
     upper_red = np.array([180,255,60])
     filteredHsvImg = cv.inRange(hsvImg, lower_red, upper_red)
-    #cv.imshow('filteredHsvImg',filteredHsvImg)
     filteredHsvImg = (255 - filteredHsvImg);
     kernel = np.ones((3,3),np.uint8)
     erodedImg = cv.erode(filteredHsvImg,kernel,iterations = 1)
@@ -190,11 +186,7 @@ def getObjectPerimeters(rawImg, pathPointResolution, robotPositions):
     except ValueError:
         contours, _ = cv.findContours(canny_edImg, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
     contourImg = np.zeros(rawImg.shape)
-    cv.drawContours(contourImg, contours, -1, (0,0,255), 3)
-    #cv.imshow('contourImg',contourImg)
-    #print(type(contours))
-    #print("contours: {}".format(hierarchy))
-    #print("hierarchy: {}".format(hierarchy))
+    cv.drawContours(contourImg, contours, -1, (0,0,255), 3) if ShowImages == True
     X_list = []
     Y_list = []
     List = []
@@ -207,8 +199,8 @@ def getObjectPerimeters(rawImg, pathPointResolution, robotPositions):
         M = cv.moments(CurrentContour)
         cx = int(M['m10']/M['m00'])
         cy = int(M['m01']/M['m00'])
-        cX_list.append(cx/225)
-        cY_list.append(cy/225)
+        cX_list.append(cx/0.225)
+        cY_list.append(cy/0.225)
         Continue = True
 
 
@@ -237,21 +229,21 @@ def getObjectPerimeters(rawImg, pathPointResolution, robotPositions):
                 #Y_list.append(Y1)
                 for j in range(NoOfPts):
                     Xn = CurrentContour[j*SamplingInterval,0,0]
-                    X_list.append(Xn/225)
+                    X_list.append(Xn/0.225)
                     Yn = CurrentContour[j*SamplingInterval,0,1]
-                    Y_list.append(Yn/225)
-                    cv.circle(drawing,(Xn,Yn), 2, (0,255,0), 1)
+                    Y_list.append(Yn/0.225)
+                    cv.circle(drawing,(Xn,Yn), 2, (0,255,0), 1) if ShowImages == True
 
                 Last_Index = (ContourSize - math.ceil(SamplingInterval/2))-1
                 if(Last_Index > 0 and Last_Index < ContourSize):
                     X_last = CurrentContour[Last_Index,0,0]
-                    X_list.append(X_last/225)
+                    X_list.append(X_last/0.225)
                     Y_last = CurrentContour[Last_Index,0,1]
-                    Y_list.append(Y_last/225)
-                    cv.circle(drawing,(X_last,Y_last), 2, (0,255,0), 1)
+                    Y_list.append(Y_last/0.225)
+                    cv.circle(drawing,(X_last,Y_last), 2, (0,255,0), 1) if ShowImages == True
     # X_list = np.asarray(X_list)
     # Y_list = np.asarray(Y_list)
-    cv.imshow("Drawing",drawing)
+    cv.imshow("Drawing",drawing) if ShowImages == True
     return X_list, Y_list
 
 
@@ -307,7 +299,7 @@ def calc_repulsive_potential(x, y, ox, oy, rr):
 
 def get_motion_model():
     # dx, dy
-    Step = 0.10
+    Step = 100
     motion = [[Step, 0],
               [0, Step],
               [-Step, 0],
@@ -364,7 +356,7 @@ def potential_field_planning(sx, sy, gx, gy, ox, oy, reso, rr):
             plt.plot(ix, iy, ".r")
             plt.pause(0.01)
 
-    print("Goal!!")
+    #print("Goal!!")
     # for i in range(len(rx)):
     #     print("{rx},{ry}".format(rx=rx[i],ry=ry[i]))
     return rx, ry
