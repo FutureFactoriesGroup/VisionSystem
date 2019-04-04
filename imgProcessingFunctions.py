@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 # Parameters
 KP = 1  # attractive potential gain
 ETA = 75.0  # repulsive potential gain
-AREA_WIDTH = 50.0  # potential area width [m]
+AREA_WIDTH = 4.0  # potential area width [m]
 
 show_animation = True
 
@@ -91,9 +91,9 @@ def getMarkerPositions(rawImg,centresImg):
             centres.append(tempCent)
             cv.circle(finalCentresImg,tuple(tempCent), 1, (0,255,0), 1)
             #print("adding circle")
-    cv.imshow('finalCentresImg',finalCentresImg)
+    #cv.imshow('finalCentresImg',finalCentresImg)
 
-    print("Found {} markers".format(len(centres)))
+    #print("Found {} markers".format(len(centres)))
     return centres
 
 def getRobotPositions(centres):
@@ -141,7 +141,7 @@ def getRobotPositions(centres):
 
                         centroid = np.mean(ab_c,axis=0)[0]
                         ab2c = bestMatch-(0.5*ab+a)
-                        print("ab2c: {}".format(ab2c))
+                        #print("ab2c: {}".format(ab2c))
                         conv = np.array([[1,0],[0,1j]])
                         angle = np.angle(np.sum(np.matmul(ab2c,conv)),deg=False)
                         if robotPositions.shape == (0,):
@@ -186,7 +186,7 @@ def getObjectPerimeters(rawImg, pathPointResolution, robotPositions, ShowImages)
     except ValueError:
         contours, _ = cv.findContours(canny_edImg, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
     contourImg = np.zeros(rawImg.shape)
-    cv.drawContours(contourImg, contours, -1, (0,0,255), 3) if ShowImages == True
+    if ShowImages == True: cv.drawContours(contourImg, contours, -1, (0,0,255), 3)
     X_list = []
     Y_list = []
     List = []
@@ -197,11 +197,12 @@ def getObjectPerimeters(rawImg, pathPointResolution, robotPositions, ShowImages)
     for i in range(len(contours)):
         CurrentContour = contours[i]
         M = cv.moments(CurrentContour)
-        cx = int(M['m10']/M['m00'])
-        cy = int(M['m01']/M['m00'])
-        cX_list.append(cx/0.225)
-        cY_list.append(cy/0.225)
-        Continue = True
+        if M['m00'] != 0:
+            cx = int(M['m10']/M['m00'])
+            cy = int(M['m01']/M['m00'])
+            cX_list.append(cx/225)
+            cY_list.append(cy/225)
+            Continue = True
 
 
         for k in range(NoOfRobots):
@@ -229,21 +230,21 @@ def getObjectPerimeters(rawImg, pathPointResolution, robotPositions, ShowImages)
                 #Y_list.append(Y1)
                 for j in range(NoOfPts):
                     Xn = CurrentContour[j*SamplingInterval,0,0]
-                    X_list.append(Xn/0.225)
+                    X_list.append(Xn/225)
                     Yn = CurrentContour[j*SamplingInterval,0,1]
-                    Y_list.append(Yn/0.225)
-                    cv.circle(drawing,(Xn,Yn), 2, (0,255,0), 1) if ShowImages == True
+                    Y_list.append(Yn/225)
+                    if ShowImages == True: cv.circle(drawing,(Xn,Yn), 2, (0,255,0), 1)
 
                 Last_Index = (ContourSize - math.ceil(SamplingInterval/2))-1
                 if(Last_Index > 0 and Last_Index < ContourSize):
                     X_last = CurrentContour[Last_Index,0,0]
-                    X_list.append(X_last/0.225)
+                    X_list.append(X_last/225)
                     Y_last = CurrentContour[Last_Index,0,1]
-                    Y_list.append(Y_last/0.225)
-                    cv.circle(drawing,(X_last,Y_last), 2, (0,255,0), 1) if ShowImages == True
+                    Y_list.append(Y_last/225)
+                    if ShowImages == True: cv.circle(drawing,(X_last,Y_last), 2, (0,255,0), 1)
     # X_list = np.asarray(X_list)
     # Y_list = np.asarray(Y_list)
-    cv.imshow("Drawing",drawing) if ShowImages == True
+    if ShowImages == True: cv.imshow("Drawing",drawing)
     return X_list, Y_list
 
 
@@ -252,7 +253,7 @@ def calc_potential_field(gx, gy, ox, oy, reso, rr):
     miny = min(oy) - AREA_WIDTH / 2.0
     maxx = max(ox) + AREA_WIDTH / 2.0
     maxy = max(oy) + AREA_WIDTH / 2.0
-    xw = int(round((maxxprint("nre x {}".format(newX)) - minx) / reso))
+    xw = int(round((maxx - minx) / reso))
     yw = int(round((maxy - miny) / reso))
 
     # calc each potential
@@ -299,7 +300,7 @@ def calc_repulsive_potential(x, y, ox, oy, rr):
 
 def get_motion_model():
     # dx, dy
-    Step = 100
+    Step = 0.1
     motion = [[Step, 0],
               [0, Step],
               [-Step, 0],
@@ -351,7 +352,6 @@ def potential_field_planning(sx, sy, gx, gy, ox, oy, reso, rr):
         d = np.hypot(gx - xp, gy - yp)
         rx.append(xp)
         ry.append(yp)
-
         if show_animation:
             plt.plot(ix, iy, ".r")
             plt.pause(0.01)
