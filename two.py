@@ -60,7 +60,7 @@ class PathPlanningThread(threading.Thread):
 
         if TargetID == "A":
             gx = 0.5#/0.225  # goal x position [m]
-            gy = 0.5#/0.225  # goal y position [m]
+            gy = 1.5#/0.225  # goal y position [m]
         elif TargetID == "B":
             gx = 100/225  # goal x position [m]
             gy = 350/225  # goal y position [m]
@@ -72,7 +72,7 @@ class PathPlanningThread(threading.Thread):
             gy = 350/225  # goal y position [m]
 
         grid_size = 0.1  # potential grid size [m]
-        robot_radius = 0.3  # robot radius [m]
+        robot_radius = 0.25  # robot radius [m]
 
         ox = X_list # obstacle x position list [m]
         oy = Y_list  # obstacle y position list [m]
@@ -86,10 +86,13 @@ class PathPlanningThread(threading.Thread):
             plt.grid(True)
             plt.axis("equal")
         rx, ry = a_star_planning(sx, sy, gx, gy, ox, oy, grid_size, robot_radius)
+        rx = list(reversed(rx))
+        ry = list(reversed(ry))
+        rx.append(gx)
+        ry.append(gy)
         if show_animation:  # pragma: no cover
             plt.plot(rx, ry, "-r")
-            plt.show()
-
+            plt.draw()
         PathData = "(" + str(len(rx))
         for i in range(len(rx)):
             #if ShowImages == True:
@@ -172,7 +175,6 @@ cam.set(4, 1080) #Height
 cam.set(cv.CAP_PROP_AUTO_EXPOSURE,1)# TEMP:
 Start = 1
 while(True):
-    #print("I'm in")
     ret,frame = cam.read()
     inputImg = frame.copy()
     cols = 800
@@ -182,8 +184,8 @@ while(True):
     #threadLock.acquire()
     rawImg = cv.resize(inputImg,(newX, newY))#, interpolation = cv.INTER_CUBIC)
     #threadLock.release()
-    if ShowImages == True:
-        cv.imshow('outputWindow',rawImg)
+    #if ShowImages == True:
+    cv.imshow('outputWindow',rawImg)
     centresImg = rawImg
     InitPositionData = '3'+'1'+'4'+'1'+'022'
     if(Start == 1):
@@ -239,5 +241,4 @@ while(True):
     if cv.waitKey(1) & 0xFF == ord('q'):
         cv.destroyAllWindows()
         cam.release()
-        PathPlanning.stop()
-        exit()
+        sys.exit()

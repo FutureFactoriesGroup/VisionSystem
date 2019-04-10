@@ -6,11 +6,10 @@ from scipy import interpolate
 import matplotlib.pyplot as plt
 
 # Parameters
-KP = 100  # attractive potential gain
-ETA = 5 # repulsive potential gain
-AREA_WIDTH = 4.0  # potential area width [m]
-
-show_animation = True
+# KP = 100  # attractive potential gain
+# ETA = 5 # repulsive potential gain
+# AREA_WIDTH = 4.0  # potential area width [m]
+show_animation = False
 
 def getMarkerPositions(rawImg,centresImg):
     if rawImg.any() == None:
@@ -52,7 +51,7 @@ def getMarkerPositions(rawImg,centresImg):
     finalCentresImg = rawImg.copy()#np.zeros(rawImg.shape)
     areas = []
     momentsList = []
-    areaLowerThreshold = 85
+    areaLowerThreshold = 50
     areaUpperThreshold = 130
     #contCounter = 0
     for cont in contours:
@@ -172,21 +171,21 @@ def getObjectPerimeters(rawImg, pathPointResolution, robotPositions, ShowImages)
     filteredHsvImg = cv.inRange(hsvImg, lower_red, upper_red)
     filteredHsvImg = (255 - filteredHsvImg);
     kernel = np.ones((3,3),np.uint8)
-
-    dilatedImg = cv.dilate(filteredHsvImg,kernel,iterations = 4)
+    erodedImg = cv.erode(filteredHsvImg,kernel,iterations = 2)
+    dilatedImg = cv.dilate(erodedImg,kernel,iterations = 3)
     dilatedImg = cv.blur(dilatedImg, (3,3)) # uncomment potentially?
-    erodedImg = cv.erode(dilatedImg,kernel,iterations = 3)
+
     low_threshold = 0
     ratio = 3
     kernel_size = 5
-    canny_edImg = cv.Canny(erodedImg, low_threshold, low_threshold*ratio, kernel_size)
+    canny_edImg = cv.Canny(dilatedImg, low_threshold, low_threshold*ratio, kernel_size)
     #cv.imshow('Floor Mapping',canny_edImg)
 
     try:
-        _, contours, _ = cv.findContours(canny_edImg, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+        _, contours, _ = cv.findContours(canny_edImg, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
         #break
     except ValueError:
-        contours, _ = cv.findContours(canny_edImg, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+        contours, _ = cv.findContours(canny_edImg, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
     contourImg = np.zeros(rawImg.shape)
     if ShowImages == True: cv.drawContours(contourImg, contours, -1, (0,0,255), 3)
     X_list = []
@@ -210,49 +209,18 @@ def getObjectPerimeters(rawImg, pathPointResolution, robotPositions, ShowImages)
             for k in range(NoOfRobots):
                 X_robot = (robotPositions[k])/1000
                 Y_robot = (robotPositions[k+1])/1000
-                Distance = ((X_robot-cx)**2 + (Y_robot-cy)**2)**0.5
-                if(Distance > 1):
-                    i = i+1
-                    if(i < len(contours)):
-                        CurrentContour = contours[i]
-                    else:
-                        Continue = False
-                else:
+                Distance = (((X_robot-cx)**2) + ((Y_robot-cy)**2))**0.5
+                if(Distance > 0.5):
                     Continue = False
-        else:
-            Continue = False
-        if(Continue):
-            ContourSize = (CurrentContour.shape)[0]
-            if(ContourSize > 1): #and cv.contourArea(CurrentContour) > 50:
-                X1 = CurrentContour[0,0,0]
-                X2 = CurrentContour[1,0,0]
-                Y1 = CurrentContour[0,0,1]
-                Y2 = CurrentContour[1,0,1]
+                    ContourSize = (CurrentContour.shape)[0]
+                    if(ContourSize > 1): #and cv.contourArea(CurrentContour) > 50:
+                        for j in range(ContourSize):
+                            Xn = CurrentContour[j,0,0]
+                            X_list.append(Xn/225)
+                            Yn = CurrentContour[j,0,1]
+                            Y_list.append(Yn/225)
+                            if ShowImages == True: cv.circle(drawing,(Xn,Yn), 2, (0,255,0), 1)
 
-                ContourResolution = ((X2-X1)**2 + (Y2-Y1)**2)**0.5
-                SamplingInterval = 1#int(pathPointResolution/ContourResolution)
-                NoOfPts = int(ContourSize/SamplingInterval)
-                #X_list.append(X1)
-                #Y_list.append(Y1)
-                for j in range(NoOfPts):
-                    Xn = CurrentContour[j*SamplingInterval,0,0]
-                    X_list.append(Xn/225)
-                    Yn = CurrentContour[j*SamplingInterval,0,1]
-                    Y_list.append(Yn/225)
-                    if ShowImages == True: cv.circle(drawing,(Xn,Yn), 2, (0,255,0), 1)
-
-                Last_Index = (ContourSize - math.ceil(SamplingInterval/2))-1
-                if(Last_Index > 0 and Last_Index < ContourSize):
-                    X_last = CurrentContour[Last_Index,0,0]
-                    X_list.append(X_last/225)
-                    Y_last = CurrentContour[Last_Index,0,1]
-                    Y_list.append(Y_last/225)
-                    if ShowImages == True: cv.circle(drawing,(X_last,Y_last), 2, (0,255,0), 1)
-            else:
-                X1 = CurrentContour[0,0,0]
-                Y1 = CurrentContour[0,0,1]
-                X_list.append(X1/225)
-                Y_list.append(Y1/225)
     # X_list = np.asarray(X_list)
     # Y_list = np.asarray(Y_list)
     #if ShowImages == True: cv.imshow("Drawing",drawing)
