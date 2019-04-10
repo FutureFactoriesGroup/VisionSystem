@@ -26,6 +26,9 @@ ShowImages = False
 rawImg = None
 robotPositions = []
 PathPlanning = None
+PathImg = None
+Canny_Floor = None
+drawing = None
 
 class PathPlanningThread(threading.Thread):
     def __init__(self,rawImg,robotPositions,TargetID):
@@ -36,14 +39,16 @@ class PathPlanningThread(threading.Thread):
         #threadLock.release()
         threading.Thread.__init__(self)
     def run(self):
-        parametersImg = self.Image
-        centresImg = parametersImg.copy()
-        #robotPositions = self.RobotPositions
-        TargetID = self.TargetID
         global ShowImages
         global DataToSend
         global pub
         global robotPositions
+        global PathImg
+        parametersImg = self.Image
+        centresImg = parametersImg.copy()
+        PathImg = parametersImg.copy()
+        #robotPositions = self.RobotPositions
+        TargetID = self.TargetID
 
         InitPathData = '3'+'1'+'4'+'1'+'019'
 
@@ -54,8 +59,8 @@ class PathPlanningThread(threading.Thread):
         sy = (robotPositions[1])/1000# start y positon [m]
 
         if TargetID == "A":
-            gx = 1.0#/0.225  # goal x position [m]
-            gy = 1.0#/0.225  # goal y position [m]
+            gx = 0.5#/0.225  # goal x position [m]
+            gy = 0.5#/0.225  # goal y position [m]
         elif TargetID == "B":
             gx = 100/225  # goal x position [m]
             gy = 350/225  # goal y position [m]
@@ -73,13 +78,24 @@ class PathPlanningThread(threading.Thread):
         oy = Y_list  # obstacle y position list [m]
 
         # path generation
-        rx, ry = potential_field_planning(
-            sx, sy, gx, gy, ox, oy, grid_size, robot_radius)
-        PathData = "(" + str(len(rx)) + ','
+        #rx, ry = potential_field_planning(sx, sy, gx, gy, ox, oy, grid_size, robot_radius)
+        if show_animation:  # pragma: no cover
+            plt.plot(ox, oy, ".k")
+            plt.plot(sx, sy, "xr")
+            plt.plot(gx, gy, "xb")
+            plt.grid(True)
+            plt.axis("equal")
+        rx, ry = a_star_planning(sx, sy, gx, gy, ox, oy, grid_size, robot_radius)
+        if show_animation:  # pragma: no cover
+            plt.plot(rx, ry, "-r")
+            plt.show()
+
+        PathData = "(" + str(len(rx))
         for i in range(len(rx)):
             #if ShowImages == True:
-            #cv.circle(centresImg, (int(rx[i]*225),int(ry[i]*225)), 5, ( 0, 0, 255 ), 1, 8 )
-            PathData = PathData + ',(' + str(rx[i]) + ',' + str(ry[i]) + ')'
+            cv.circle(PathImg, (int(rx[i]*225),int(ry[i]*225)), 5, ( 0, 0, 255 ), 1, 8 )
+            #PathData = PathData + '(' + str(int(rx[i]*1000)) + ',' + str(int(ry[i]*1000)) + ')'
+            PathData = PathData + ',' + str(int(rx[i]*1000)) + ',' + str(int(ry[i]*1000))
         PathData = PathData + ')'
 
         m = hashlib.sha256()
@@ -91,7 +107,6 @@ class PathPlanningThread(threading.Thread):
         pub.publish(DataToSend)
         #threadLock.release()
         #if ShowImages == True:
-        #cv.imshow('centresImg',centresImg)
 
 
 def callback(data):
@@ -100,10 +115,12 @@ def callback(data):
         global robotPositions
         global PathPlanning
         TargetID = "A"
-        Positions =  (robotPositions[0]),(robotPositions[1])
+        try:
+            Positions =  (robotPositions[0]),(robotPositions[1])
+        except IndexError as e:
+            print(robotPositions)
         PathPlanning = PathPlanningThread(rawImg,Positions,TargetID)
         PathPlanning.start()
-        #PathPlanning.detach()
 
 
 exposureVal = 105
@@ -153,7 +170,7 @@ cv.createTrackbar("gainTrackbar",       "outputWindow", gainVal, 300, gainCallba
 cam.set(3, 1920) #Width
 cam.set(4, 1080) #Height
 cam.set(cv.CAP_PROP_AUTO_EXPOSURE,1)# TEMP:
-
+Start = 1
 while(True):
     #print("I'm in")
     ret,frame = cam.read()
@@ -169,7 +186,10 @@ while(True):
         cv.imshow('outputWindow',rawImg)
     centresImg = rawImg
     InitPositionData = '3'+'1'+'4'+'1'+'022'
-
+    if(Start == 1):
+        PathImg = rawImg.copy()
+        Start = 0
+    cv.imshow('Path',PathImg)
     ####################### run functions
     centres = getMarkerPositions(rawImg,centresImg)
     UnfilteredRobotPositions = getRobotPositions(centres)
@@ -178,10 +198,10 @@ while(True):
     m = hashlib.sha256()
     if UnfilteredRobotPositions.size != 0:
         try:
-            PositionData = '(1,' + str(UnfilteredRobotPositions[0]/0.225) + ',' + str(UnfilteredRobotPositions[1]/0.225) + ',' + str(UnfilteredRobotPositions[2]) + ')'
+            PositionData = '(1,' + str(int(UnfilteredRobotPositions[0]/0.225)) + ',' + str(int(UnfilteredRobotPositions[1]/0.225)) + ',' + str(UnfilteredRobotPositions[2]) + ')'
             robotPositions = UnfilteredRobotPositions/0.225
-        except IndexError as e:
-            PositionData = '(1,' + str(UnfilteredRobotPositions[0,0]/0.225) + ',' + str(UnfilteredRobotPositions[0,1]/0.225) + ',' + str(UnfilteredRobotPositions[0,2]) + ')'
+        except:
+            PositionData = '(1,' + str(int(UnfilteredRobotPositions[0,0]/0.225)) + ',' + str(int(UnfilteredRobotPositions[0,1]/0.225)) + ',' + str(UnfilteredRobotPositions[0,2]) + ')'
             #print("2 detections")
             robotPositions = UnfilteredRobotPositions[0,:]/0.225
         #threadLock.acquire()
@@ -194,7 +214,6 @@ while(True):
         if ShowImages == True: cv.imshow('centresImg',centresImg)# TEMP:
 
     #################################### image demo rendering code:
-
     if ShowImages == True:
         #print("robotPositions")
         #print(robotPositions)
@@ -217,8 +236,8 @@ while(True):
                     y = int(np.sin(UnfilteredRobotPositions.item(baseNo,2))*length)+int(UnfilteredRobotPositions.item(baseNo,1))
                     cv.arrowedLine(centresImg, (int(UnfilteredRobotPositions.item(baseNo,0)),int(UnfilteredRobotPositions.item(baseNo,1))), (x, y), (0,255,0), 2)
 
-
     if cv.waitKey(1) & 0xFF == ord('q'):
         cv.destroyAllWindows()
         cam.release()
+        PathPlanning.stop()
         exit()
