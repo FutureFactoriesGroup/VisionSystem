@@ -70,9 +70,13 @@ class PathPlanningThread(threading.Thread):
         elif TargetID == "D":
             gx = 100/225  # goal x position [m]
             gy = 350/225  # goal y position [m]
+        elif ',' in TargetID:
+            Coordinates = TargetID.split(',')
+            gx = float(Coordinates[0])
+            gy = float(Coordinates[1])
 
         grid_size = 0.1  # potential grid size [m]
-        robot_radius = 0.25  # robot radius [m]
+        robot_radius = 0.2  # robot radius [m]
 
         ox = X_list # obstacle x position list [m]
         oy = Y_list  # obstacle y position list [m]
@@ -85,14 +89,17 @@ class PathPlanningThread(threading.Thread):
             plt.plot(gx, gy, "xb")
             plt.grid(True)
             plt.axis("equal")
+        #try:
         rx, ry = a_star_planning(sx, sy, gx, gy, ox, oy, grid_size, robot_radius)
+        #except:
+            #pass
         rx = list(reversed(rx))
         ry = list(reversed(ry))
         rx.append(gx)
         ry.append(gy)
         if show_animation:  # pragma: no cover
             plt.plot(rx, ry, "-r")
-            plt.draw()
+            plt.show()
         PathData = "(" + str(len(rx))
         for i in range(len(rx)):
             #if ShowImages == True:
@@ -117,7 +124,10 @@ def callback(data):
     if (data.data.startswith('41')):
         global robotPositions
         global PathPlanning
-        TargetID = "A"
+        DataString = data.data
+        DataList = DataString.split('(')
+        DataList = str(DataList[1]).split(')')
+        TargetID = DataList[0]
         try:
             Positions =  (robotPositions[0]),(robotPositions[1])
         except IndexError as e:
@@ -211,7 +221,7 @@ while(True):
         m.update(PositionData.encode('utf-8'))
         Checksum = m.hexdigest()
         DataToSend = DataToSend + Checksum
-        #pub.publish(DataToSend)
+        pub.publish(DataToSend)
         #threadLock.release()
         if ShowImages == True: cv.imshow('centresImg',centresImg)# TEMP:
 

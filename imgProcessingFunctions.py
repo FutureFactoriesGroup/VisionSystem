@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 # KP = 100  # attractive potential gain
 # ETA = 5 # repulsive potential gain
 # AREA_WIDTH = 4.0  # potential area width [m]
-show_animation = False
+show_animation = True
 
 def getMarkerPositions(rawImg,centresImg):
     if rawImg.any() == None:
