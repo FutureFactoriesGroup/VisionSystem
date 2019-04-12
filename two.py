@@ -42,6 +42,7 @@ class PathPlanningThread(threading.Thread):
         global ShowImages
         global DataToSend
         global pub
+        global pub2
         global robotPositions
         global PathImg
         parametersImg = self.Image
@@ -89,35 +90,42 @@ class PathPlanningThread(threading.Thread):
             plt.plot(gx, gy, "xb")
             plt.grid(True)
             plt.axis("equal")
-        #try:
-        rx, ry = a_star_planning(sx, sy, gx, gy, ox, oy, grid_size, robot_radius)
-        #except:
-            #pass
-        rx = list(reversed(rx))
-        ry = list(reversed(ry))
-        rx.append(gx)
-        ry.append(gy)
-        if show_animation:  # pragma: no cover
+        try:
+            rx, ry = a_star_planning(sx, sy, gx, gy, ox, oy, grid_size, robot_radius)
+            rx = list(reversed(rx))
+            ry = list(reversed(ry))
+            rx.append(gx)
+            ry.append(gy)
+            if show_animation:  # pragma: no cover
             plt.plot(rx, ry, "-r")
             plt.show()
-        PathData = "(" + str(len(rx))
-        for i in range(len(rx)):
+            PathData = "(" + str(len(rx))
+            for i in range(len(rx)):
+                #if ShowImages == True:
+                cv.circle(PathImg, (int(rx[i]*225),int(ry[i]*225)), 5, ( 0, 0, 255 ), 1, 8 )
+                #PathData = PathData + '(' + str(int(rx[i]*1000)) + ',' + str(int(ry[i]*1000)) + ')'
+                PathData = PathData + ',' + str(int(rx[i]*1000)) + ',' + str(int(ry[i]*1000))
+            PathData = PathData + ')'
+            m = hashlib.sha256()
+            #threadLock.acquire()
+            DataToSend = InitPathData + str(len(PathData)) + PathData
+            m.update(DataToSend.encode('utf-8'))
+            Checksum = m.hexdigest()
+            DataToSend = DataToSend + Checksum
+            pub.publish(DataToSend)
+            #threadLock.release()
             #if ShowImages == True:
-            cv.circle(PathImg, (int(rx[i]*225),int(ry[i]*225)), 5, ( 0, 0, 255 ), 1, 8 )
-            #PathData = PathData + '(' + str(int(rx[i]*1000)) + ',' + str(int(ry[i]*1000)) + ')'
-            PathData = PathData + ',' + str(int(rx[i]*1000)) + ',' + str(int(ry[i]*1000))
-        PathData = PathData + ')'
-
-        m = hashlib.sha256()
-        #threadLock.acquire()
-        DataToSend = InitPathData + str(len(PathData)) + PathData
-        m.update(PositionData.encode('utf-8'))
-        Checksum = m.hexdigest()
-        DataToSend = DataToSend + Checksum
-        pub.publish(DataToSend)
-        #threadLock.release()
-        #if ShowImages == True:
-
+        except:
+            print("No path found")
+            DataToSend = "0041035000"
+            m = hashlib.sha256()
+            m.update(DataToSend.encode('utf-8'))
+            Checksum = m.hexdigest()
+            DataToSend = DataToSend + Checksum
+            pub2.publish(DataToSend)
+            cv.destroyAllWindows()
+            cam.release()
+            sys.exit()
 
 def callback(data):
     #rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
@@ -135,6 +143,16 @@ def callback(data):
         PathPlanning = PathPlanningThread(rawImg,Positions,TargetID)
         PathPlanning.start()
 
+def callback2(data):
+    #rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
+    if (data.data.startswith('00')):
+        DataString = data.data
+        DataString = DataString[4:7]
+        if DataString == "035":
+            cv.destroyAllWindows()
+            cam.release()
+            sys.exit()
+
 
 exposureVal = 105
 saturationVal = 150
@@ -145,7 +163,13 @@ gainVal = 150
 rospy.init_node('Vision', anonymous=True)
 rospy.Subscriber("/transport", String, callback)
 
+rospy.init_node('Vision', anonymous=True)
+rospy.Subscriber("/system", String, callback2)
+
 pub = rospy.Publisher('/transport', String, queue_size=10)
+rospy.init_node('Vision', anonymous=True)
+
+pub2 = rospy.Publisher('/transport', String, queue_size=10)
 rospy.init_node('Vision', anonymous=True)
 #rospy.loginfo(DataToSend)
 
@@ -218,7 +242,7 @@ while(True):
             robotPositions = UnfilteredRobotPositions[0,:]/0.225
         #threadLock.acquire()
         DataToSend = InitPositionData + str(len(PositionData)) + PositionData
-        m.update(PositionData.encode('utf-8'))
+        m.update(DataToSend.encode('utf-8'))
         Checksum = m.hexdigest()
         DataToSend = DataToSend + Checksum
         pub.publish(DataToSend)
