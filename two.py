@@ -51,7 +51,7 @@ class PathPlanningThread(threading.Thread):
         #robotPositions = self.RobotPositions
         TargetID = self.TargetID
 
-        InitPathData = '3'+'1'+'4'+'1'+'019'
+        InitPathData = '335'+'1'+'4'+'1'+'019'
 
         X_list, Y_list = getObjectPerimeters(parametersImg, 15, robotPositions, ShowImages)
         ####################### Path Planning ###########################
@@ -97,8 +97,8 @@ class PathPlanningThread(threading.Thread):
             rx.append(gx)
             ry.append(gy)
             if show_animation:  # pragma: no cover
-            plt.plot(rx, ry, "-r")
-            plt.show()
+                plt.plot(rx, ry, "-r")
+                plt.show()
             PathData = "(" + str(len(rx))
             for i in range(len(rx)):
                 #if ShowImages == True:
@@ -202,8 +202,6 @@ cv.createTrackbar("brightnessTrackbar", "outputWindow", brightnessVal, 300, brig
 cv.createTrackbar("contrastTrackbar",   "outputWindow", contrastVal, 500, contrastCallback)
 cv.createTrackbar("gainTrackbar",       "outputWindow", gainVal, 300, gainCallback)
 
-
-
 cam.set(3, 1920) #Width
 cam.set(4, 1080) #Height
 cam.set(cv.CAP_PROP_AUTO_EXPOSURE,1)# TEMP:
@@ -247,7 +245,6 @@ while(True):
         DataToSend = DataToSend + Checksum
         pub.publish(DataToSend)
         #threadLock.release()
-        if ShowImages == True: cv.imshow('centresImg',centresImg)# TEMP:
 
     #################################### image demo rendering code:
     if ShowImages == True:
@@ -271,6 +268,8 @@ while(True):
                     x = int(np.cos(UnfilteredRobotPositions.item(baseNo,2))*length)+int(UnfilteredRobotPositions.item(baseNo,0))
                     y = int(np.sin(UnfilteredRobotPositions.item(baseNo,2))*length)+int(UnfilteredRobotPositions.item(baseNo,1))
                     cv.arrowedLine(centresImg, (int(UnfilteredRobotPositions.item(baseNo,0)),int(UnfilteredRobotPositions.item(baseNo,1))), (x, y), (0,255,0), 2)
+    if ShowImages == True: cv.imshow('centresImg',centresImg)# TEMP:
+
 
     if cv.waitKey(1) & 0xFF == ord('q'):
         cv.destroyAllWindows()

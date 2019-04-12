@@ -52,7 +52,7 @@ def getMarkerPositions(rawImg,centresImg):
     areas = []
     momentsList = []
     areaLowerThreshold = 50
-    areaUpperThreshold = 130
+    areaUpperThreshold = 150
     #contCounter = 0
     for cont in contours:
         if (cv.contourArea(cont) > areaLowerThreshold and cv.contourArea(cont) < areaUpperThreshold):
@@ -117,8 +117,8 @@ def getRobotPositions(centres):
                     if abNorm > maxabNorm or abNorm < minabNorm: # ie if its larger or smaller than expected
                         continue # ie begin loop on next b candidate
                     abOrth = np.array([-ab[1],ab[0]])
-                    cEst0 = (0.5*ab+a) + 2*abOrth # get estimates for positions of third marker
-                    cEst1 = (0.5*ab+a) - 2*abOrth
+                    cEst0 = (0.5*ab+a) + 2.85*abOrth # get estimates for positions of third marker
+                    cEst1 = (0.5*ab+a) - 2.85*abOrth
                     bestMatch = 0
                     bestMatchIndex = 0
                     smallestDist = 10000
