@@ -17,7 +17,7 @@ KP = 0.25  # attractive potential gain
 ETA = 0.75  # repulsive potential gain
 AREA_WIDTH = 100.0  # potential area width [m]
 
-show_animation = True
+show_animation = False
 
 
 def calc_potential_field(gx, gy, ox, oy, reso, rr):

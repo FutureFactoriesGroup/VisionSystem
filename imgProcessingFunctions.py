@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 # KP = 100  # attractive potential gain
 # ETA = 5 # repulsive potential gain
 # AREA_WIDTH = 4.0  # potential area width [m]
-show_animation = True
+show_animation = False
 
 def getMarkerPositions(rawImg,centresImg):
     if rawImg.any() == None:
@@ -143,6 +143,9 @@ def getRobotPositions(centres):
                         #print("ab2c: {}".format(ab2c))
                         conv = np.array([[1,0],[0,1j]])
                         angle = np.angle(np.sum(np.matmul(ab2c,conv)),deg=False)
+                        if(angle<0):
+                            angle =  2*math.pi - abs(angle)
+
                         if robotPositions.shape == (0,):
                             robotPositions = np.array([centroid.item(0),centroid.item(1),angle])
                         else:
@@ -194,7 +197,11 @@ def getObjectPerimeters(rawImg, pathPointResolution, robotPositions, ShowImages)
     cX_list = []
     cY_list = []
     drawing = np.zeros(rawImg.shape,dtype=np.uint8)
-    NoOfRobots = int(((robotPositions.shape)[0])/3)
+    try:
+        NoOfRobots = int(((robotPositions.shape)[0])/3)
+    except AttributeError as e:
+        NoOfRobots = int(((len(robotPositions))/3))
+
     for i in range(len(contours)):
         CurrentContour = contours[i]
         M = cv.moments(CurrentContour)

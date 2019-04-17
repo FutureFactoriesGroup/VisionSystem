@@ -19,24 +19,33 @@ import hashlib
 import rospy
 from std_msgs.msg import String
 import threading
+import time
 
-#threadLock = threading.Lock()
+threadLock = threading.Lock()
 #threads = []
-ShowImages = False
+ShowImages = True
 rawImg = None
 robotPositions = []
 PathPlanning = None
 PathImg = None
 Canny_Floor = None
 drawing = None
+LastMsgTimeStamp = 0
+Ack = 1
+
+def Length3Digit(Length):
+    if Length > 100:
+        return (str(Length))
+    elif Length > 10:
+        return ('0' + str(Length))
+    elif Length > 0:
+        return ('00' + str(Length))
 
 class PathPlanningThread(threading.Thread):
     def __init__(self,rawImg,robotPositions,TargetID):
-        #threadLock.acquire()
         self.Image = rawImg
         self.RobotPositions = robotPositions
         self.TargetID = TargetID
-        #threadLock.release()
         threading.Thread.__init__(self)
     def run(self):
         global ShowImages
@@ -45,13 +54,14 @@ class PathPlanningThread(threading.Thread):
         global pub2
         global robotPositions
         global PathImg
+        global LastMsgTimeStamp
         parametersImg = self.Image
         centresImg = parametersImg.copy()
         PathImg = parametersImg.copy()
         #robotPositions = self.RobotPositions
         TargetID = self.TargetID
 
-        InitPathData = '335'+'1'+'4'+'1'+'019'
+        InitPathData = '3'+'1'+'4'+'1'+'019'
 
         X_list, Y_list = getObjectPerimeters(parametersImg, 15, robotPositions, ShowImages)
         ####################### Path Planning ###########################
@@ -76,7 +86,7 @@ class PathPlanningThread(threading.Thread):
             gx = float(Coordinates[0])
             gy = float(Coordinates[1])
 
-        grid_size = 0.1  # potential grid size [m]
+        grid_size = 0.5  # potential grid size [m]
         robot_radius = 0.2  # robot radius [m]
 
         ox = X_list # obstacle x position list [m]
@@ -100,21 +110,25 @@ class PathPlanningThread(threading.Thread):
                 plt.plot(rx, ry, "-r")
                 plt.show()
             PathData = "(" + str(len(rx))
+            threadLock.acquire()
             for i in range(len(rx)):
                 #if ShowImages == True:
                 cv.circle(PathImg, (int(rx[i]*225),int(ry[i]*225)), 5, ( 0, 0, 255 ), 1, 8 )
                 #PathData = PathData + '(' + str(int(rx[i]*1000)) + ',' + str(int(ry[i]*1000)) + ')'
                 PathData = PathData + ',' + str(int(rx[i]*1000)) + ',' + str(int(ry[i]*1000))
             PathData = PathData + ')'
+            threadLock.release()
             m = hashlib.sha256()
-            #threadLock.acquire()
-            DataToSend = InitPathData + str(len(PathData)) + PathData
-            m.update(DataToSend.encode('utf-8'))
+            PathData = InitPathData + Length3Digit(len(PathData)) + PathData
+            m.update(PathData.encode('utf-8'))
             Checksum = m.hexdigest()
-            DataToSend = DataToSend + Checksum
-            pub.publish(DataToSend)
-            #threadLock.release()
+            PathData = PathData + Checksum
+            pub.publish(PathData)
+
             #if ShowImages == True:
+            LastMsgTimeStamp = time.time()
+            Ack = 0
+
         except:
             print("No path found")
             DataToSend = "0041035000"
@@ -122,6 +136,8 @@ class PathPlanningThread(threading.Thread):
             m.update(DataToSend.encode('utf-8'))
             Checksum = m.hexdigest()
             DataToSend = DataToSend + Checksum
+            pub2.publish(DataToSend)
+            pub2.publish(DataToSend)
             pub2.publish(DataToSend)
             cv.destroyAllWindows()
             cam.release()
@@ -132,16 +148,36 @@ def callback(data):
     if (data.data.startswith('41')):
         global robotPositions
         global PathPlanning
+        global pub
+        global Ack
+        m = hashlib.sha256()
         DataString = data.data
-        DataList = DataString.split('(')
-        DataList = str(DataList[1]).split(')')
-        TargetID = DataList[0]
-        try:
-            Positions =  (robotPositions[0]),(robotPositions[1])
-        except IndexError as e:
-            print(robotPositions)
-        PathPlanning = PathPlanningThread(rawImg,Positions,TargetID)
-        PathPlanning.start()
+        OriginalChecksum = DataString[-64:]
+        OriginalData = DataString[:-64]
+        NewChecksum = m.hexdigest()
+
+        m.update(OriginalData.encode('utf-8'))
+        if(True): #NewChecksum == OriginalChecksum:
+            DataToSend = "5141000000"
+            m = hashlib.sha256()
+            m.update(DataToSend.encode('utf-8'))
+            Checksum = m.hexdigest()
+            DataToSend = DataToSend + Checksum
+            pub.publish(DataToSend)
+
+            if(DataString[4:7] == '018'):
+                DataList = DataString.split('(')
+                DataList = str(DataList[1]).split(')')
+                TargetID = DataList[0]
+                try:
+                    Positions =  (robotPositions[0]),(robotPositions[1])
+                except IndexError as e:
+                    print(robotPositions)
+                PathPlanning = PathPlanningThread(rawImg,Positions,TargetID)
+                PathPlanning.start()
+            elif(DataString[4:7] == '000'):
+                Ack = 1
+
 
 def callback2(data):
     #rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
@@ -163,14 +199,14 @@ gainVal = 150
 rospy.init_node('Vision', anonymous=True)
 rospy.Subscriber("/transport", String, callback)
 
-rospy.init_node('Vision', anonymous=True)
+#rospy.init_node('Vision', anonymous=True)
 rospy.Subscriber("/system", String, callback2)
 
 pub = rospy.Publisher('/transport', String, queue_size=10)
-rospy.init_node('Vision', anonymous=True)
+#rospy.init_node('Vision', anonymous=True)
 
 pub2 = rospy.Publisher('/transport', String, queue_size=10)
-rospy.init_node('Vision', anonymous=True)
+#rospy.init_node('Vision', anonymous=True)
 #rospy.loginfo(DataToSend)
 
 ################### get test image
@@ -213,9 +249,9 @@ while(True):
     height, width, depth = inputImg.shape
     scale = float(cols)/float(width)
     newX,newY = int(inputImg.shape[1]*scale), int(inputImg.shape[0]*scale)
-    #threadLock.acquire()
+    threadLock.acquire()
     rawImg = cv.resize(inputImg,(newX, newY))#, interpolation = cv.INTER_CUBIC)
-    #threadLock.release()
+    threadLock.release()
     #if ShowImages == True:
     cv.imshow('outputWindow',rawImg)
     centresImg = rawImg
@@ -232,14 +268,19 @@ while(True):
     m = hashlib.sha256()
     if UnfilteredRobotPositions.size != 0:
         try:
-            PositionData = '(1,' + str(int(UnfilteredRobotPositions[0]/0.225)) + ',' + str(int(UnfilteredRobotPositions[1]/0.225)) + ',' + str(UnfilteredRobotPositions[2]) + ')'
-            robotPositions = UnfilteredRobotPositions/0.225
+            PositionData = '(1,' + str(int(UnfilteredRobotPositions[0]/0.225)) + ',' + str(int(UnfilteredRobotPositions[1]/0.225)) + ',' + str(int(UnfilteredRobotPositions[2]*100)) + ')'
+            robotPositions = [UnfilteredRobotPositions[0]/0.225,UnfilteredRobotPositions[1]/0.225,UnfilteredRobotPositions[2]*100]
         except:
-            PositionData = '(1,' + str(int(UnfilteredRobotPositions[0,0]/0.225)) + ',' + str(int(UnfilteredRobotPositions[0,1]/0.225)) + ',' + str(UnfilteredRobotPositions[0,2]) + ')'
-            #print("2 detections")
-            robotPositions = UnfilteredRobotPositions[0,:]/0.225
+            a,b = UnfilteredRobotPositions.shape
+            for i in range(a):
+                Distance = ((((UnfilteredRobotPositions[i,0]/0.225)-robotPositions[0])**2 + ((UnfilteredRobotPositions[i,1]/0.225)-robotPositions[1])**2)**0.5)
+                AngleError = (UnfilteredRobotPositions[i,2]*100 - robotPositions[2])
+                if(Distance<250) and (AngleError < 60):
+                    PositionData = '(1,' + str(int(UnfilteredRobotPositions[i,0]/0.225)) + ',' + str(int(UnfilteredRobotPositions[i,1]/0.225)) + ',' + str(int(UnfilteredRobotPositions[i,2]*100)) + ')'
+                    #print("2 detections")
+                    robotPositions = UnfilteredRobotPositions[0,:]/0.225
         #threadLock.acquire()
-        DataToSend = InitPositionData + str(len(PositionData)) + PositionData
+        DataToSend = InitPositionData + Length3Digit(len(PositionData)) + PositionData
         m.update(DataToSend.encode('utf-8'))
         Checksum = m.hexdigest()
         DataToSend = DataToSend + Checksum
@@ -270,6 +311,8 @@ while(True):
                     cv.arrowedLine(centresImg, (int(UnfilteredRobotPositions.item(baseNo,0)),int(UnfilteredRobotPositions.item(baseNo,1))), (x, y), (0,255,0), 2)
     if ShowImages == True: cv.imshow('centresImg',centresImg)# TEMP:
 
+    #if(Ack != 1) and ((time.time()-LastMsgTimeStamp)>3):
+        #pub.publish(PathData)
 
     if cv.waitKey(1) & 0xFF == ord('q'):
         cv.destroyAllWindows()
