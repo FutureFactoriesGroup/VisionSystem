@@ -23,7 +23,10 @@ import time
 
 threadLock = threading.Lock()
 #threads = []
-ShowImages = True
+if(len(sys.argv) > 1):
+    ShowImages = bool(sys.argv[1])
+else:
+    ShowImages = False
 rawImg = None
 robotPositions = []
 PathPlanning = None
@@ -86,7 +89,7 @@ class PathPlanningThread(threading.Thread):
             gx = float(Coordinates[0])
             gy = float(Coordinates[1])
 
-        grid_size = 0.5  # potential grid size [m]
+        grid_size = 0.25  # potential grid size [m]
         robot_radius = 0.2  # robot radius [m]
 
         ox = X_list # obstacle x position list [m]
@@ -190,6 +193,7 @@ def callback2(data):
             sys.exit()
 
 
+#file_object  = open("parameters.txt", 'r')
 exposureVal = 105
 saturationVal = 150
 brightnessVal = 0
@@ -211,55 +215,64 @@ pub2 = rospy.Publisher('/transport', String, queue_size=10)
 
 ################### get test image
 cam = cv.VideoCapture(0)
-cv.namedWindow( "outputWindow", cv.WINDOW_AUTOSIZE );
-def exposureCallback(val):
-    exposureVal = cv.getTrackbarPos("exposureTrackbar", "outputWindow")
+if ShowImages == True:
+    cv.namedWindow( "outputWindow", cv.WINDOW_AUTOSIZE );
+    def exposureCallback(val):
+        exposureVal = cv.getTrackbarPos("exposureTrackbar", "outputWindow")
+        cam.set(15,exposureVal)
+
+    def saturationCallback(val):
+        saturationVal = cv.getTrackbarPos("saturationTrackbar", "outputWindow")
+        cam.set(12,saturationVal)
+
+    def brightnessCallback(val):
+        brightnessVal = cv.getTrackbarPos("brightnessTrackbar", "outputWindow")
+        cam.set(10,brightnessVal)
+
+    def contrastCallback(val):
+        contrastVal = cv.getTrackbarPos("contrastTrackbar", "outputWindow")
+        cam.set(11,contrastVal)
+
+    def gainCallback(val):
+        gainVal = cv.getTrackbarPos("gainTrackbar", "outputWindow")
+        cam.set(14,gainVal)
+
+    cv.createTrackbar("exposureTrackbar",   "outputWindow", exposureVal, 300, exposureCallback)
+    cv.createTrackbar("saturationTrackbar", "outputWindow", saturationVal, 300, saturationCallback)
+    cv.createTrackbar("brightnessTrackbar", "outputWindow", brightnessVal, 300, brightnessCallback)
+    cv.createTrackbar("contrastTrackbar",   "outputWindow", contrastVal, 500, contrastCallback)
+    cv.createTrackbar("gainTrackbar",       "outputWindow", gainVal, 300, gainCallback)
+
+else:
     cam.set(15,exposureVal)
-
-def saturationCallback(val):
-    saturationVal = cv.getTrackbarPos("saturationTrackbar", "outputWindow")
     cam.set(12,saturationVal)
-
-def brightnessCallback(val):
-    brightnessVal = cv.getTrackbarPos("brightnessTrackbar", "outputWindow")
     cam.set(10,brightnessVal)
-
-def contrastCallback(val):
-    contrastVal = cv.getTrackbarPos("contrastTrackbar", "outputWindow")
     cam.set(11,contrastVal)
-
-def gainCallback(val):
-    gainVal = cv.getTrackbarPos("gainTrackbar", "outputWindow")
     cam.set(14,gainVal)
 
-cv.createTrackbar("exposureTrackbar",   "outputWindow", exposureVal, 300, exposureCallback)
-cv.createTrackbar("saturationTrackbar", "outputWindow", saturationVal, 300, saturationCallback)
-cv.createTrackbar("brightnessTrackbar", "outputWindow", brightnessVal, 300, brightnessCallback)
-cv.createTrackbar("contrastTrackbar",   "outputWindow", contrastVal, 500, contrastCallback)
-cv.createTrackbar("gainTrackbar",       "outputWindow", gainVal, 300, gainCallback)
-
-cam.set(3, 1920) #Width
-cam.set(4, 1080) #Height
+cam.set(3, 800) #Width
+cam.set(4, 448) #Height
 cam.set(cv.CAP_PROP_AUTO_EXPOSURE,1)# TEMP:
 Start = 1
 while(True):
     ret,frame = cam.read()
     inputImg = frame.copy()
-    cols = 800
-    height, width, depth = inputImg.shape
-    scale = float(cols)/float(width)
-    newX,newY = int(inputImg.shape[1]*scale), int(inputImg.shape[0]*scale)
-    threadLock.acquire()
-    rawImg = cv.resize(inputImg,(newX, newY))#, interpolation = cv.INTER_CUBIC)
-    threadLock.release()
+    rawImg = frame.copy()
+    # cols = 800
+    # height, width, depth = inputImg.shape
+    # scale = float(cols)/float(width)
+    # newX,newY = int(inputImg.shape[1]*scale), int(inputImg.shape[0]*scale)
+    # threadLock.acquire()
+    # rawImg = cv.resize(inputImg,(newX, newY))#, interpolation = cv.INTER_CUBIC)
+    # threadLock.release()
     #if ShowImages == True:
-    cv.imshow('outputWindow',rawImg)
+    if ShowImages == True: cv.imshow('outputWindow',rawImg)
     centresImg = rawImg
     InitPositionData = '3'+'1'+'4'+'1'+'022'
     if(Start == 1):
         PathImg = rawImg.copy()
         Start = 0
-    cv.imshow('Path',PathImg)
+    if ShowImages == True: cv.imshow('Path',PathImg)
     ####################### run functions
     centres = getMarkerPositions(rawImg,centresImg)
     UnfilteredRobotPositions = getRobotPositions(centres)

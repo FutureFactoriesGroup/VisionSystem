@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 # ETA = 5 # repulsive potential gain
 # AREA_WIDTH = 4.0  # potential area width [m]
 show_animation = False
+ShowImages = False
 
 def getMarkerPositions(rawImg,centresImg):
     if rawImg.any() == None:
@@ -39,7 +40,7 @@ def getMarkerPositions(rawImg,centresImg):
     kernel_size = 3
     erodedImg = cv.erode(dilatedImg,kernel,iterations =1)
     canny_edImg = cv.Canny(erodedImg, low_threshold, low_threshold*ratio, kernel_size)
-    cv.imshow('canny_edImg',canny_edImg)
+    if ShowImages == True: cv.imshow('canny_edImg',canny_edImg)
 
     try:
         contours, _ = cv.findContours(canny_edImg, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
