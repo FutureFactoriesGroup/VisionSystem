@@ -37,6 +37,7 @@ Canny_Floor = None
 drawing = None
 LastMsgTimeStamp = 0
 Ack = 1
+TargetID = ""
 
 def Length3Digit(Length):
     if Length > 100:
@@ -60,6 +61,7 @@ class PathPlanningThread(threading.Thread):
         global robotPositions
         global PathImg
         global LastMsgTimeStamp
+        global TargetID
         parametersImg = self.Image
         centresImg = parametersImg.copy()
         PathImg = parametersImg.copy()
@@ -74,16 +76,16 @@ class PathPlanningThread(threading.Thread):
         sx = (robotPositions[0])/1000 # start x position [m]
         sy = (robotPositions[1])/1000# start y positon [m]
 
-        if TargetID == "A":
+        if TargetID == "1":
             gx = 0.5#/0.225  # goal x position [m]
             gy = 1.5#/0.225  # goal y position [m]
-        elif TargetID == "B":
+        elif TargetID == "6":
             gx = 100/225  # goal x position [m]
             gy = 350/225  # goal y position [m]
-        elif TargetID == "C":
+        elif TargetID == "7":
             gx = 100/225  # goal x position [m]
             gy = 350/225  # goal y position [m]
-        elif TargetID == "D":
+        elif TargetID == "8":
             gx = 100/225  # goal x position [m]
             gy = 350/225  # goal y position [m]
         elif ',' in TargetID:
@@ -156,6 +158,7 @@ def callback(data):
         global PathPlanning
         global pub
         global Ack
+        global TargetID
         m = hashlib.sha256()
         DataString = data.data
         OriginalChecksum = DataString[-64:]
@@ -181,6 +184,63 @@ def callback(data):
                     print(robotPositions)
                 PathPlanning = PathPlanningThread(rawImg,Positions,TargetID)
                 PathPlanning.start()
+            elif(DataString[4:7] == '050'):
+                DataList = DataString.split('(')
+                DataList = str(DataList[1]).split(')')
+                Command = int(DataList[0])
+
+
+                sx = robotPositions[0]
+                sy = robotPositions[1]
+
+                if TargetID == "1":
+                    gx = 0.5#/0.225  # goal x position [m]
+                    gy = 1.5#/0.225  # goal y position [m]
+                    z = -70
+                elif TargetID == "6":
+                    gx = 100/225  # goal x position [m]
+                    gy = 350/225  # goal y position [m]
+                    z = -70
+                elif TargetID == "7":
+                    gx = 100/225  # goal x position [m]
+                    gy = 350/225  # goal y position [m]
+                    z = -70
+                elif TargetID == "8":
+                    gx = 100/225  # goal x position [m]
+                    gy = 350/225  # goal y position [m]
+                    z = -70
+
+                ArmVector =  [gx-sx,gy-sy]
+                AngleOffset = robotPositions[2]/100
+
+                Cθ = math.cos(AngleOffset)
+                Sθ = math.sin(AngleOffset)
+
+                x = ArmVector[0]*Cθ - ArmVector[1]*Sθ #x cos θ − y sin θ
+                y = ArmVector[0]*Sθ + ArmVector[1]*Cθ #x sin θ + y cos θ
+
+                if(Command == 0):
+                    #Place
+                    z = z - 20
+                    DataToSend = "({},{},{},0)".format(x,y,z)
+                    DataToSend = "3141041" + len(DataSend) + DataToSend
+                    m = hashlib.sha256()
+                    m.update(DataToSend.encode('utf-8'))
+                    Checksum = m.hexdigest()
+                    DataToSend = DataToSend + Checksum
+                    pub.publish(DataToSend)
+
+                elif(Command == 1):
+                    #Pick up
+                    z = z
+                    DataToSend = "({},{},{},1)".format(x,y,z)
+                    DataToSend = "3141041" + len(DataSend) + DataToSend
+                    m = hashlib.sha256()
+                    m.update(DataToSend.encode('utf-8'))
+                    Checksum = m.hexdigest()
+                    DataToSend = DataToSend + Checksum
+                    pub.publish(DataToSend)
+
             elif(DataString[4:7] == '000'):
                 Ack = 1
 
