@@ -27,7 +27,9 @@ if(len(sys.argv) > 1):
     ShowImages = bool(sys.argv[1])
 else:
     ShowImages = False
-rawImg = None
+rawImg = None    # checkSumG=hashlib.sha256(msgRF.encode('utf-8')).hexdigest()
+    # if checkSumRF!=checkSumG
+    #     return
 robotPositions = []
 PathPlanning = None
 PathImg = None
@@ -89,8 +91,8 @@ class PathPlanningThread(threading.Thread):
             gx = float(Coordinates[0])
             gy = float(Coordinates[1])
 
-        grid_size = 0.25  # potential grid size [m]
-        robot_radius = 0.2  # robot radius [m]
+        grid_size = 0.2  # potential grid size [m]
+        robot_radius = 0.25  # robot radius [m]
 
         ox = X_list # obstacle x position list [m]
         oy = Y_list  # obstacle y position list [m]
@@ -106,6 +108,7 @@ class PathPlanningThread(threading.Thread):
         try:
             rx, ry = a_star_planning(sx, sy, gx, gy, ox, oy, grid_size, robot_radius)
             rx = list(reversed(rx))
+
             ry = list(reversed(ry))
             rx.append(gx)
             ry.append(gy)
@@ -215,6 +218,13 @@ pub2 = rospy.Publisher('/transport', String, queue_size=10)
 
 ################### get test image
 cam = cv.VideoCapture(0)
+time.sleep(3)
+cam.set(15,exposureVal)
+cam.set(12,saturationVal)
+cam.set(10,brightnessVal)
+cam.set(11,contrastVal)
+cam.set(14,gainVal)
+
 if ShowImages == True:
     cv.namedWindow( "outputWindow", cv.WINDOW_AUTOSIZE );
     def exposureCallback(val):
