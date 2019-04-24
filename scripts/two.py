@@ -79,12 +79,15 @@ class PathPlanningThread(threading.Thread):
         if TargetID == "1":
             gx = 0.5#/0.225  # goal x position [m]
             gy = 1.5#/0.225  # goal y position [m]
+            TargetAngle = 314
         elif TargetID == "6":
             gx = 100/225  # goal x position [m]
             gy = 350/225  # goal y position [m]
+            TargetAngle = 314
         elif TargetID == "7":
             gx = 100/225  # goal x position [m]
             gy = 350/225  # goal y position [m]
+            TargetAngle = 0
         elif TargetID == "8":
             gx = 100/225  # goal x position [m]
             gy = 350/225  # goal y position [m]
@@ -92,6 +95,7 @@ class PathPlanningThread(threading.Thread):
             Coordinates = TargetID.split(',')
             gx = float(Coordinates[0])
             gy = float(Coordinates[1])
+            TargetAngle = 0
 
         grid_size = 0.2  # potential grid size [m]
         robot_radius = 0.25  # robot radius [m]
@@ -124,7 +128,7 @@ class PathPlanningThread(threading.Thread):
                 cv.circle(PathImg, (int(rx[i]*225),int(ry[i]*225)), 5, ( 0, 0, 255 ), 1, 8 )
                 #PathData = PathData + '(' + str(int(rx[i]*1000)) + ',' + str(int(ry[i]*1000)) + ')'
                 PathData = PathData + ',' + str(int(rx[i]*1000)) + ',' + str(int(ry[i]*1000))
-            PathData = PathData + ')'
+            PathData = PathData ',' + str(TargetAngle) + ')'
             threadLock.release()
             m = hashlib.sha256()
             PathData = InitPathData + Length3Digit(len(PathData)) + PathData
