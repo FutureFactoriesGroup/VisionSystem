@@ -212,7 +212,7 @@ def callback(data):
                 elif TargetID == "8":
                     gx = 100/225  # goal x position [m]
                     gy = 350/225  # goal y position [m]
-                    z = -70
+                    z = -50
 
                 ArmVector =  [gx-sx,gy-sy]
                 AngleOffset = robotPositions[2]/100
@@ -225,7 +225,17 @@ def callback(data):
 
                 if(Command == 0):
                     #Place
-                    z = z - 20
+                    DataToSend = "({},{},70,1)".format(x,y)
+                    DataToSend = "3141041" + len(DataSend) + DataToSend
+                    m = hashlib.sha256()
+                    m.update(DataToSend.encode('utf-8'))
+                    Checksum = m.hexdigest()
+                    DataToSend = DataToSend + Checksum
+                    pub.publish(DataToSend)
+
+
+                    time.sleep(3)
+                    z = z + 20
                     DataToSend = "({},{},{},0)".format(x,y,z)
                     DataToSend = "3141041" + len(DataSend) + DataToSend
                     m = hashlib.sha256()
@@ -238,6 +248,15 @@ def callback(data):
                     #Pick up
                     z = z
                     DataToSend = "({},{},{},1)".format(x,y,z)
+                    DataToSend = "3141041" + len(DataSend) + DataToSend
+                    m = hashlib.sha256()
+                    m.update(DataToSend.encode('utf-8'))
+                    Checksum = m.hexdigest()
+                    DataToSend = DataToSend + Checksum
+                    pub.publish(DataToSend)
+
+                    time.sleep(3)
+                    DataToSend = "({},{},70,1)".format(x,y,z)
                     DataToSend = "3141041" + len(DataSend) + DataToSend
                     m = hashlib.sha256()
                     m.update(DataToSend.encode('utf-8'))
