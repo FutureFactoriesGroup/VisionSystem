@@ -27,9 +27,7 @@ if(len(sys.argv) > 1):
     ShowImages = bool(sys.argv[1])
 else:
     ShowImages = False
-rawImg = None    # checkSumG=hashlib.sha256(msgRF.encode('utf-8')).hexdigest()
-    # if checkSumRF!=checkSumG
-    #     return
+rawImg = None
 robotPositions = []
 PathPlanning = None
 PathImg = None
@@ -58,6 +56,7 @@ class PathPlanningThread(threading.Thread):
         global DataToSend
         global pub
         global pub2
+        global pub3
         global robotPositions
         global PathImg
         global LastMsgTimeStamp
@@ -77,31 +76,49 @@ class PathPlanningThread(threading.Thread):
         sy = (robotPositions[1])/1000# start y positon [m]
 
         if TargetID == "1":
-            gx = 0.5#/0.225  # goal x position [m]
-            gy = 1.5#/0.225  # goal y position [m]
+            gx = 0.8#/0.225  # goal x position [m]
+            gxfinal = 0.3
+            gy = 0.55#/0.225  # goal y position [m]
             TargetAngle = 314
         elif TargetID == "6":
-            gx = 100/225  # goal x position [m]
-            gy = 350/225  # goal y position [m]
+            gx = 0.6  # goal x position [m]
+            gxfinal = 0.31
+            gy = 1.57  # goal y position [m]
             TargetAngle = 314
         elif TargetID == "7":
-            gx = 100/225  # goal x position [m]
-            gy = 350/225  # goal y position [m]
+            gx = 3.0 # goal x position [m]
+            gxfinal = 3.3
+            gy = 0.75  # goal y position [m]
             TargetAngle = 0
         elif TargetID == "8":
-            gx = 100/225  # goal x position [m]
-            gy = 350/225  # goal y position [m]
+            gx = 2.1  # goal x position [m]
+            gxfinal = 2.3
+            gy = 1.53  # goal y position [m]
+            TargetAngle = 0
         elif ',' in TargetID:
             Coordinates = TargetID.split(',')
             gx = float(Coordinates[0])
             gy = float(Coordinates[1])
             TargetAngle = 0
 
+        # cv.circle(PathImg, (int(3*225),int(1.8*225)), 5, ( 0, 255, 0 ), 1, 8 )
+        # cv.circle(PathImg, (int(3.15*225),int(0.45*225)), 5, ( 0, 255, 0 ), 1, 8 )
+        # cv.circle(PathImg, (int(0.16*225),int(1.825*225)), 5, ( 0, 255, 0 ), 1, 8 )
+        # cv.circle(PathImg, (int(0.15*225),int(0.25*225)), 5, ( 0, 255, 0 ), 1, 8 )
+
+        cv.circle(PathImg, (int(2.45*225),int(1.9*225)), 5, ( 0, 255, 0 ), 1, 8 ) #Finish Bin
+        cv.circle(PathImg, (int(3.36*225),int(0.43*225)), 5, ( 0, 255, 0 ), 1, 8 ) #Hopper
+        cv.circle(PathImg, (int(0.25*225),int(1.85*225)), 5, ( 0, 255, 0 ), 1, 8 ) #LED
+        cv.circle(PathImg, (int(0.25*225),int(0.25*225)), 5, ( 0, 255, 0 ), 1, 8 ) #CNC
+
         grid_size = 0.2  # potential grid size [m]
         robot_radius = 0.25  # robot radius [m]
 
         ox = X_list # obstacle x position list [m]
         oy = Y_list  # obstacle y position list [m]
+        for i in range(190):
+            ox.append(0.0)
+            oy.append(i/100)
 
         # path generation
         #rx, ry = potential_field_planning(sx, sy, gx, gy, ox, oy, grid_size, robot_radius)
@@ -111,49 +128,51 @@ class PathPlanningThread(threading.Thread):
             plt.plot(gx, gy, "xb")
             plt.grid(True)
             plt.axis("equal")
-        try:
-            rx, ry = a_star_planning(sx, sy, gx, gy, ox, oy, grid_size, robot_radius)
-            rx = list(reversed(rx))
+        #try:
+        rx, ry = a_star_planning(sx, sy, gx, gy, ox, oy, grid_size, robot_radius)
+        rx = list(reversed(rx))
 
-            ry = list(reversed(ry))
-            rx.append(gx)
-            ry.append(gy)
-            if show_animation:  # pragma: no cover
-                plt.plot(rx, ry, "-r")
-                plt.show()
-            PathData = "(" + str(len(rx))
-            threadLock.acquire()
-            for i in range(len(rx)):
-                #if ShowImages == True:
-                cv.circle(PathImg, (int(rx[i]*225),int(ry[i]*225)), 5, ( 0, 0, 255 ), 1, 8 )
-                #PathData = PathData + '(' + str(int(rx[i]*1000)) + ',' + str(int(ry[i]*1000)) + ')'
-                PathData = PathData + ',' + str(int(rx[i]*1000)) + ',' + str(int(ry[i]*1000))
-            PathData = PathData ',' + str(TargetAngle) + ')'
-            threadLock.release()
-            m = hashlib.sha256()
-            PathData = InitPathData + Length3Digit(len(PathData)) + PathData
-            m.update(PathData.encode('utf-8'))
-            Checksum = m.hexdigest()
-            PathData = PathData + Checksum
-            pub.publish(PathData)
-
+        ry = list(reversed(ry))
+        rx.append(gx)
+        ry.append(gy)
+        rx.append(gxfinal)
+        ry.append(gy)
+        if show_animation:  # pragma: no cover
+            plt.plot(rx, ry, "-r")
+            plt.show()
+        PathData = "(" + str(len(rx))
+        threadLock.acquire()
+        for i in range(len(rx)):
             #if ShowImages == True:
-            LastMsgTimeStamp = time.time()
-            Ack = 0
+            cv.circle(PathImg, (int(rx[i]*225),int(ry[i]*225)), 5, ( 0, 0, 255 ), 1, 8 )
+            #PathData = PathData + '(' + str(int(rx[i]*1000)) + ',' + str(int(ry[i]*1000)) + ')'
+            PathData = PathData + ',' + str(int(rx[i]*1000)) + ',' + str(int(ry[i]*1000))
+        PathData = PathData + ',' + str(TargetAngle) + ')'
+        threadLock.release()
+        m = hashlib.sha256()
+        PathData = InitPathData + Length3Digit(len(PathData)) + PathData
+        m.update(PathData.encode('utf-8'))
+        Checksum = m.hexdigest()
+        PathData = PathData + Checksum
+        pub.publish(PathData)
 
-        except:
-            print("No path found")
-            DataToSend = "0041035000"
-            m = hashlib.sha256()
-            m.update(DataToSend.encode('utf-8'))
-            Checksum = m.hexdigest()
-            DataToSend = DataToSend + Checksum
-            pub2.publish(DataToSend)
-            pub2.publish(DataToSend)
-            pub2.publish(DataToSend)
-            cv.destroyAllWindows()
-            cam.release()
-            sys.exit()
+        #if ShowImages == True:
+        LastMsgTimeStamp = time.time()
+        Ack = 0
+
+        # except:
+        #     print("No path found")
+        #     DataToSend = "0041035000"
+        #     m = hashlib.sha256()
+        #     m.update(DataToSend.encode('utf-8'))
+        #     Checksum = m.hexdigest()
+        #     DataToSend = DataToSend + Checksum
+        #     pub2.publish(DataToSend)
+        #     pub2.publish(DataToSend)
+        #     pub2.publish(DataToSend)
+        #     cv.destroyAllWindows()
+        #     cam.release()
+        #     sys.exit()
 
 def callback(data):
     #rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
@@ -176,7 +195,7 @@ def callback(data):
             m.update(DataToSend.encode('utf-8'))
             Checksum = m.hexdigest()
             DataToSend = DataToSend + Checksum
-            pub.publish(DataToSend)
+            #pub.publish(DataToSend)
 
             if(DataString[4:7] == '018'):
                 DataList = DataString.split('(')
@@ -198,21 +217,21 @@ def callback(data):
                 sy = robotPositions[1]
 
                 if TargetID == "1":
-                    gx = 0.5#/0.225  # goal x position [m]
-                    gy = 1.5#/0.225  # goal y position [m]
-                    z = -70
-                elif TargetID == "6":
-                    gx = 100/225  # goal x position [m]
-                    gy = 350/225  # goal y position [m]
-                    z = -70
-                elif TargetID == "7":
-                    gx = 100/225  # goal x position [m]
-                    gy = 350/225  # goal y position [m]
-                    z = -70
-                elif TargetID == "8":
-                    gx = 100/225  # goal x position [m]
-                    gy = 350/225  # goal y position [m]
+                    gx = 250#/0.225  # goal x position [m]
+                    gy = 220#/0.225  # goal y position [m]
                     z = -50
+                elif TargetID == "6":
+                    gx = 250  # goal x position [m]
+                    gy = 1850  # goal y position [m]
+                    z = -50
+                elif TargetID == "7":
+                    gx = 3360  # goal x position [m]
+                    gy = 430  # goal y position [m]
+                    z = -50
+                elif TargetID == "8":
+                    gx = 2450  # goal x position [m]
+                    gy = 1900  # goal y position [m]
+                    z = 50
 
                 ArmVector =  [gx-sx,gy-sy]
                 AngleOffset = robotPositions[2]/100
@@ -220,24 +239,53 @@ def callback(data):
                 Cθ = math.cos(AngleOffset)
                 Sθ = math.sin(AngleOffset)
 
-                x = ArmVector[0]*Cθ - ArmVector[1]*Sθ #x cos θ − y sin θ
+                x = ArmVector[0]*Cθ - ArmVector[1]*Sθ + 50#x cos θ − y sin θ
                 y = ArmVector[0]*Sθ + ArmVector[1]*Cθ #x sin θ + y cos θ
 
                 if(Command == 0):
                     #Place
-                    DataToSend = "({},{},70,1)".format(x,y)
-                    DataToSend = "3141041" + len(DataSend) + DataToSend
+                    DataToSend = "({},{},80,1)".format(x,-y)
+                    DataToSend = "3141041" + Length3Digit(len(DataToSend)) + DataToSend
                     m = hashlib.sha256()
                     m.update(DataToSend.encode('utf-8'))
                     Checksum = m.hexdigest()
                     DataToSend = DataToSend + Checksum
                     pub.publish(DataToSend)
 
-
                     time.sleep(3)
                     z = z + 20
-                    DataToSend = "({},{},{},0)".format(x,y,z)
-                    DataToSend = "3141041" + len(DataSend) + DataToSend
+                    DataToSend = "({},{},{},0)".format(x,-y,z)
+                    DataToSend = "3141041" + Length3Digit(len(DataToSend)) + DataToSend
+                    m = hashlib.sha256()
+                    m.update(DataToSend.encode('utf-8'))
+                    Checksum = m.hexdigest()
+                    DataToSend = DataToSend + Checksum
+                    pub.publish(DataToSend)
+
+                    time.sleep(3)
+                    DataToSend = "({},{},80,0)".format(x,-y)
+                    DataToSend = "3141041" + Length3Digit(len(DataToSend)) + DataToSend
+                    m = hashlib.sha256()
+                    m.update(DataToSend.encode('utf-8'))
+                    Checksum = m.hexdigest()
+                    DataToSend = DataToSend + Checksum
+                    pub.publish(DataToSend)
+
+                    time.sleep(3)
+                    if (-y < 0):
+                        HomeY = -151
+                    else:
+                        HomeY = 151
+                    DataToSend = "(85,{},80,0)".format(HomeY)
+                    DataToSend = "3141041" + Length3Digit(len(DataToSend)) + DataToSend
+                    m = hashlib.sha256()
+                    m.update(DataToSend.encode('utf-8'))
+                    Checksum = m.hexdigest()
+                    DataToSend = DataToSend + Checksum
+                    pub.publish(DataToSend)
+
+                    time.sleep(5)
+                    DataToSend = "5131045000"
                     m = hashlib.sha256()
                     m.update(DataToSend.encode('utf-8'))
                     Checksum = m.hexdigest()
@@ -246,9 +294,38 @@ def callback(data):
 
                 elif(Command == 1):
                     #Pick up
+                    DataToSend = "({},{},80,0)".format(x,-y)
+                    DataToSend = "3141041" + Length3Digit(len(DataToSend)) + DataToSend
+                    m = hashlib.sha256()
+                    m.update(DataToSend.encode('utf-8'))
+                    Checksum = m.hexdigest()
+                    DataToSend = DataToSend + Checksum
+                    pub.publish(DataToSend)
+                    time.sleep(3)
+
                     z = z
-                    DataToSend = "({},{},{},1)".format(x,y,z)
-                    DataToSend = "3141041" + len(DataSend) + DataToSend
+                    DataToSend = "({},{},{},1)".format(x,-y,z)
+                    DataToSend = "3141041" + Length3Digit(len(DataToSend)) + DataToSend
+                    m = hashlib.sha256()
+                    m.update(DataToSend.encode('utf-8'))
+                    Checksum = m.hexdigest()
+                    DataToSend = DataToSend + Checksum
+                    pub.publish(DataToSend)
+
+                    if(TargetID == "7"):
+                        time.sleep(3)
+                        z = 90
+                        DataToSend = "({},{},{},1)".format(x,-y,z)
+                        DataToSend = "3141041" + Length3Digit(len(DataToSend)) + DataToSend
+                        m = hashlib.sha256()
+                        m.update(DataToSend.encode('utf-8'))
+                        Checksum = m.hexdigest()
+                        DataToSend = DataToSend + Checksum
+                        pub.publish(DataToSend)
+
+                    time.sleep(3)
+                    DataToSend = "({},{},80,1)".format(x,-y)
+                    DataToSend = "3141041" + Length3Digit(len(DataToSend)) + DataToSend
                     m = hashlib.sha256()
                     m.update(DataToSend.encode('utf-8'))
                     Checksum = m.hexdigest()
@@ -256,8 +333,20 @@ def callback(data):
                     pub.publish(DataToSend)
 
                     time.sleep(3)
-                    DataToSend = "({},{},70,1)".format(x,y,z)
-                    DataToSend = "3141041" + len(DataSend) + DataToSend
+                    if (-y < 0):
+                        HomeY = -151
+                    else:
+                        HomeY = 151
+                    DataToSend = "(85,{},80,1)".format(HomeY)
+                    DataToSend = "3141041" + Length3Digit(len(DataToSend)) + DataToSend
+                    m = hashlib.sha256()
+                    m.update(DataToSend.encode('utf-8'))
+                    Checksum = m.hexdigest()
+                    DataToSend = DataToSend + Checksum
+                    pub.publish(DataToSend)
+
+                    time.sleep(5)
+                    DataToSend = "5131045000"
                     m = hashlib.sha256()
                     m.update(DataToSend.encode('utf-8'))
                     Checksum = m.hexdigest()
@@ -293,9 +382,10 @@ rospy.Subscriber("/transport", String, callback)
 rospy.Subscriber("/system", String, callback2)
 
 pub = rospy.Publisher('/transport', String, queue_size=10)
+pub3 = rospy.Publisher('/position', String, queue_size=10)
 #rospy.init_node('Vision', anonymous=True)
 
-pub2 = rospy.Publisher('/transport', String, queue_size=10)
+pub2 = rospy.Publisher('/system', String, queue_size=10)
 #rospy.init_node('Vision', anonymous=True)
 #rospy.loginfo(DataToSend)
 
@@ -362,8 +452,18 @@ while(True):
     if ShowImages == True: cv.imshow('outputWindow',rawImg)
     centresImg = rawImg
     InitPositionData = '3'+'1'+'4'+'1'+'022'
+
     if(Start == 1):
         PathImg = rawImg.copy()
+        cv.circle(PathImg, (int(2.45*225),int(1.9*225)), 5, ( 0, 255, 0 ), 1, 8 ) #Finish Bin
+        cv.circle(PathImg, (int(3.36*225),int(0.43*225)), 5, ( 0, 255, 0 ), 1, 8 ) #Hopper
+        cv.circle(PathImg, (int(0.25*225),int(1.85*225)), 5, ( 0, 255, 0 ), 1, 8 ) #LED
+        cv.circle(PathImg, (int(0.25*225),int(0.25*225)), 5, ( 0, 255, 0 ), 1, 8 ) #CNC
+
+        cv.circle(PathImg, (int(0.3*225),int(0.55*225)), 5, ( 255, 0, 0 ), 1, 8 )
+        cv.circle(PathImg, (int(0.31*225),int(1.57*225)), 5, ( 255, 0, 0 ), 1, 8 )
+        cv.circle(PathImg, (int(3.3*225),int(0.75*225)), 5, ( 255, 0, 0 ), 1, 8 )
+        cv.circle(PathImg, (int(2.3*225),int(1.57*225)), 5, ( 255, 0, 0 ), 1, 8 )
         Start = 0
     if ShowImages == True: cv.imshow('Path',PathImg)
     ####################### run functions
@@ -390,7 +490,7 @@ while(True):
         m.update(DataToSend.encode('utf-8'))
         Checksum = m.hexdigest()
         DataToSend = DataToSend + Checksum
-        pub.publish(DataToSend)
+        pub3.publish(DataToSend)
         #threadLock.release()
 
     #################################### image demo rendering code:
