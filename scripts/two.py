@@ -82,8 +82,8 @@ class PathPlanningThread(threading.Thread):
             TargetAngle = 314
         elif TargetID == "6":
             gx = 0.6  # goal x position [m]
-            gxfinal = 0.31
-            gy = 1.57  # goal y position [m]
+            gxfinal = 0.25
+            gy = 1.55  # goal y position [m]
             TargetAngle = 314
         elif TargetID == "7":
             gx = 3.0 # goal x position [m]
@@ -92,8 +92,8 @@ class PathPlanningThread(threading.Thread):
             TargetAngle = 0
         elif TargetID == "8":
             gx = 2.1  # goal x position [m]
-            gxfinal = 2.3
-            gy = 1.53  # goal y position [m]
+            gxfinal = 2.45
+            gy = 1.55  # goal y position [m]
             TargetAngle = 0
         elif ',' in TargetID:
             Coordinates = TargetID.split(',')
@@ -109,7 +109,7 @@ class PathPlanningThread(threading.Thread):
         cv.circle(PathImg, (int(2.45*225),int(1.9*225)), 5, ( 0, 255, 0 ), 1, 8 ) #Finish Bin
         cv.circle(PathImg, (int(3.36*225),int(0.43*225)), 5, ( 0, 255, 0 ), 1, 8 ) #Hopper
         cv.circle(PathImg, (int(0.25*225),int(1.85*225)), 5, ( 0, 255, 0 ), 1, 8 ) #LED
-        cv.circle(PathImg, (int(0.25*225),int(0.25*225)), 5, ( 0, 255, 0 ), 1, 8 ) #CNC
+        cv.circle(PathImg, (int(0.22*225),int(0.25*225)), 5, ( 0, 255, 0 ), 1, 8 ) #CNC
 
         grid_size = 0.2  # potential grid size [m]
         robot_radius = 0.25  # robot radius [m]
@@ -217,20 +217,20 @@ def callback(data):
                 sy = robotPositions[1]
 
                 if TargetID == "1":
-                    gx = 250#/0.225  # goal x position [m]
-                    gy = 220#/0.225  # goal y position [m]
+                    gx = 220#/0.225  # goal x position [m]
+                    gy = 250#/0.225  # goal y position [m]
                     z = -50
                 elif TargetID == "6":
-                    gx = 250  # goal x position [m]
-                    gy = 1850  # goal y position [m]
+                    gx = 240  # goal x position [m]
+                    gy = 1820  # goal y position [m]
                     z = -50
                 elif TargetID == "7":
-                    gx = 3360  # goal x position [m]
+                    gx = 3300  # goal x position [m]
                     gy = 430  # goal y position [m]
                     z = -50
                 elif TargetID == "8":
                     gx = 2450  # goal x position [m]
-                    gy = 1900  # goal y position [m]
+                    gy = 1820  # goal y position [m]
                     z = 50
 
                 ArmVector =  [gx-sx,gy-sy]
@@ -262,7 +262,7 @@ def callback(data):
                     DataToSend = DataToSend + Checksum
                     pub.publish(DataToSend)
 
-                    time.sleep(3)
+                    time.sleep(4)
                     DataToSend = "({},{},80,0)".format(x,-y)
                     DataToSend = "3141041" + Length3Digit(len(DataToSend)) + DataToSend
                     m = hashlib.sha256()
@@ -294,16 +294,26 @@ def callback(data):
 
                 elif(Command == 1):
                     #Pick up
-                    DataToSend = "({},{},80,0)".format(x,-y)
-                    DataToSend = "3141041" + Length3Digit(len(DataToSend)) + DataToSend
-                    m = hashlib.sha256()
-                    m.update(DataToSend.encode('utf-8'))
-                    Checksum = m.hexdigest()
-                    DataToSend = DataToSend + Checksum
-                    pub.publish(DataToSend)
-                    time.sleep(3)
+                    if(TargetID == "7"):
+                        DataToSend = "({},{},30,0)".format(x,-y)
+                        DataToSend = "3141041" + Length3Digit(len(DataToSend)) + DataToSend
+                        m = hashlib.sha256()
+                        m.update(DataToSend.encode('utf-8'))
+                        Checksum = m.hexdigest()
+                        DataToSend = DataToSend + Checksum
+                        pub.publish(DataToSend)
+                        time.sleep(3)
+                    else:
+                        DataToSend = "({},{},80,0)".format(x,-y)
+                        DataToSend = "3141041" + Length3Digit(len(DataToSend)) + DataToSend
+                        m = hashlib.sha256()
+                        m.update(DataToSend.encode('utf-8'))
+                        Checksum = m.hexdigest()
+                        DataToSend = DataToSend + Checksum
+                        pub.publish(DataToSend)
+                        time.sleep(3)
 
-                    z = z
+                    #z = z
                     DataToSend = "({},{},{},1)".format(x,-y,z)
                     DataToSend = "3141041" + Length3Digit(len(DataToSend)) + DataToSend
                     m = hashlib.sha256()
@@ -311,10 +321,10 @@ def callback(data):
                     Checksum = m.hexdigest()
                     DataToSend = DataToSend + Checksum
                     pub.publish(DataToSend)
+                    time.sleep(4)
 
                     if(TargetID == "7"):
-                        time.sleep(3)
-                        z = 90
+                        z = 110
                         DataToSend = "({},{},{},1)".format(x,-y,z)
                         DataToSend = "3141041" + Length3Digit(len(DataToSend)) + DataToSend
                         m = hashlib.sha256()
@@ -322,8 +332,8 @@ def callback(data):
                         Checksum = m.hexdigest()
                         DataToSend = DataToSend + Checksum
                         pub.publish(DataToSend)
+                        time.sleep(3)
 
-                    time.sleep(3)
                     DataToSend = "({},{},80,1)".format(x,-y)
                     DataToSend = "3141041" + Length3Digit(len(DataToSend)) + DataToSend
                     m = hashlib.sha256()
@@ -392,6 +402,7 @@ pub2 = rospy.Publisher('/system', String, queue_size=10)
 ################### get test image
 cam = cv.VideoCapture(0)
 time.sleep(3)
+cam.set(cv.CAP_PROP_AUTO_EXPOSURE,1)# TEMP:
 cam.set(15,exposureVal)
 cam.set(12,saturationVal)
 cam.set(10,brightnessVal)
@@ -435,7 +446,6 @@ else:
 
 cam.set(3, 800) #Width
 cam.set(4, 448) #Height
-cam.set(cv.CAP_PROP_AUTO_EXPOSURE,1)# TEMP:
 Start = 1
 while(True):
     ret,frame = cam.read()
@@ -458,12 +468,12 @@ while(True):
         cv.circle(PathImg, (int(2.45*225),int(1.9*225)), 5, ( 0, 255, 0 ), 1, 8 ) #Finish Bin
         cv.circle(PathImg, (int(3.36*225),int(0.43*225)), 5, ( 0, 255, 0 ), 1, 8 ) #Hopper
         cv.circle(PathImg, (int(0.25*225),int(1.85*225)), 5, ( 0, 255, 0 ), 1, 8 ) #LED
-        cv.circle(PathImg, (int(0.25*225),int(0.25*225)), 5, ( 0, 255, 0 ), 1, 8 ) #CNC
+        cv.circle(PathImg, (int(0.22*225),int(0.25*225)), 5, ( 0, 255, 0 ), 1, 8 ) #CNC
 
         cv.circle(PathImg, (int(0.3*225),int(0.55*225)), 5, ( 255, 0, 0 ), 1, 8 )
-        cv.circle(PathImg, (int(0.31*225),int(1.57*225)), 5, ( 255, 0, 0 ), 1, 8 )
+        cv.circle(PathImg, (int(0.31*225),int(1.54*225)), 5, ( 255, 0, 0 ), 1, 8 )
         cv.circle(PathImg, (int(3.3*225),int(0.75*225)), 5, ( 255, 0, 0 ), 1, 8 )
-        cv.circle(PathImg, (int(2.3*225),int(1.57*225)), 5, ( 255, 0, 0 ), 1, 8 )
+        cv.circle(PathImg, (int(2.4*225),int(1.57*225)), 5, ( 255, 0, 0 ), 1, 8 )
         Start = 0
     if ShowImages == True: cv.imshow('Path',PathImg)
     ####################### run functions
