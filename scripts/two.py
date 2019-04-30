@@ -285,7 +285,7 @@ def callback(data):
                     pub.publish(DataToSend)
 
                     time.sleep(5)
-                    DataToSend = "5131045000"
+                    DataToSend = "5131055000"
                     m = hashlib.sha256()
                     m.update(DataToSend.encode('utf-8'))
                     Checksum = m.hexdigest()
@@ -356,7 +356,7 @@ def callback(data):
                     pub.publish(DataToSend)
 
                     time.sleep(5)
-                    DataToSend = "5131045000"
+                    DataToSend = "5131055000"
                     m = hashlib.sha256()
                     m.update(DataToSend.encode('utf-8'))
                     Checksum = m.hexdigest()
